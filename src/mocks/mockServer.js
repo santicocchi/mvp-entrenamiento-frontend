@@ -176,13 +176,6 @@ ruta('POST', '/auth/refresh', { publica: true }, ({ body }) => {
 
 ruta('GET', '/usuario/perfil', {}, ({ usuario }) => [200, usuarioPublico(usuario)]);
 
-// ---- catálogo ----
-ruta('GET', '/ejercicios', { roles: ENTRENADOR }, ({ query }) => {
-  const grupo = query.get('grupo_muscular');
-  if (grupo && !['MMII', 'MMSS', 'CORE'].includes(grupo)) error(422, 'El grupo muscular no es válido.');
-  return [200, db.ejercicios.filter((e) => !grupo || e.grupo_muscular === grupo)];
-});
-
 // ---- deportistas ----
 ruta('GET', '/deportistas', { roles: ENTRENADOR }, ({ usuario }) => {
   const lista = db.vinculos
