@@ -14,15 +14,15 @@ export function crearDatosIniciales() {
     // RN18: un deportista solo puede estar vinculado a un entrenador
     vinculos: [{ entrenador_id: 1, deportista_id: 3 }],
     ejercicios: [
-      { id: 1, nombre: 'Sentadilla con barra', grupo_muscular: 'MMII' },
-      { id: 2, nombre: 'Peso muerto rumano', grupo_muscular: 'MMII' },
-      { id: 3, nombre: 'Prensa 45°', grupo_muscular: 'MMII' },
-      { id: 4, nombre: 'Press banca plano', grupo_muscular: 'MMSS' },
-      { id: 5, nombre: 'Remo con barra', grupo_muscular: 'MMSS' },
-      { id: 6, nombre: 'Press militar', grupo_muscular: 'MMSS' },
-      { id: 7, nombre: 'Dominadas', grupo_muscular: 'MMSS' },
-      { id: 8, nombre: 'Plancha', grupo_muscular: 'CORE' },
-      { id: 9, nombre: 'Crunch en polea', grupo_muscular: 'CORE' },
+      { id: 1, nombre: 'Sentadilla con barra', grupo_muscular: 'PIERNA', subgrupo: 'CUADRICEPS' },
+      { id: 2, nombre: 'Peso muerto rumano', grupo_muscular: 'PIERNA', subgrupo: 'FEMORAL' },
+      { id: 3, nombre: 'Prensa 45°', grupo_muscular: 'PIERNA', subgrupo: 'CUADRICEPS' },
+      { id: 4, nombre: 'Press banca plano', grupo_muscular: 'PECHO', subgrupo: null },
+      { id: 5, nombre: 'Remo con barra', grupo_muscular: 'ESPALDA', subgrupo: 'DORSALES' },
+      { id: 6, nombre: 'Press militar', grupo_muscular: 'HOMBRO', subgrupo: null },
+      { id: 7, nombre: 'Dominadas', grupo_muscular: 'ESPALDA', subgrupo: 'DORSALES' },
+      { id: 8, nombre: 'Plancha', grupo_muscular: 'CORE', subgrupo: null },
+      { id: 9, nombre: 'Crunch en polea', grupo_muscular: 'CORE', subgrupo: null },
     ],
     planes: [
       {
