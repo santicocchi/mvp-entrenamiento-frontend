@@ -329,11 +329,18 @@ ruta('GET', '/ejercicios/:id/ultimas-series', { roles: DEPORTISTA }, ({ usuario,
 ruta('POST', '/series', { roles: DEPORTISTA }, ({ usuario, body }) => {
   const { rutina_id: rutinaId, ejercicio_id: ejercicioId, peso, repeticiones, rir } = body ?? {};
   validarSerie({ peso, repeticiones, rir });
+  // US-15: reproduce la whitelist y el formato numérico del DTO del backend.
+  const extra = Object.keys(body).find((campo) => !['rutina_id', 'ejercicio_id', 'peso', 'repeticiones', 'rir'].includes(campo));
+  if (extra) error(422, `property ${extra} should not exist`);
+  if (!Number.isInteger(rutinaId) || rutinaId <= 0) error(422, 'La rutina debe ser un identificador positivo.');
+  if (!Number.isInteger(ejercicioId) || ejercicioId <= 0) error(422, 'El ejercicio debe ser un identificador positivo.');
+  if (!Number.isFinite(peso) || Number(peso.toFixed(2)) !== peso) error(422, 'El peso debe ser un número con hasta 2 decimales.');
   // RN3
   const vigente = planVigenteDe(usuario.id);
+  if (!vigente) error(422, 'No tenés un plan vigente.');
   const rutina = vigente?.plan.rutinas.find((r) => r.id === rutinaId);
   if (!rutina || !rutina.dosificaciones.some((d) => d.ejercicio_id === ejercicioId)) {
-    error(422, 'El ejercicio no pertenece a una rutina de tu plan vigente.');
+    error(422, 'El ejercicio no pertenece a esa rutina de tu plan vigente.');
   }
   const recordAnterior = recordActual(usuario.id, ejercicioId);
   // RN2: una sesión por deportista, rutina y fecha; se crea con la primera serie

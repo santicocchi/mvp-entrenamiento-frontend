@@ -16,7 +16,7 @@ export default function PlanVigente() {
     <section>
       <h1>{plan.nombre}</h1>
       <p className="texto-suave">
-        Armado por {plan.entrenador_nombre}. Vigente del {formatearFecha(plan.vigencia.desde)} al {formatearFecha(plan.vigencia.hasta)}.
+        Armado por {plan.entrenadorNombre}. Vigente del {formatearFecha(plan.vigencia.desde)} al {formatearFecha(plan.vigencia.hasta)}.
       </p>
       {plan.indicaciones && <p className="indicaciones">{plan.indicaciones}</p>}
 
@@ -29,9 +29,9 @@ export default function PlanVigente() {
             </div>
             <ol className="lista-ejercicios">
               {r.dosificaciones.map((d) => (
-                <li key={d.ejercicio_id}>
-                  <span>{d.ejercicio_nombre}</span>
-                  <span className="dosis">{d.series_objetivo} × {d.reps_min}–{d.reps_max} · RIR {d.rir_objetivo}</span>
+                <li key={d.ejercicioId}>
+                  <span>{d.ejercicioNombre}</span>
+                  <span className="dosis">{d.seriesObjetivo} × {d.repsMin}–{d.repsMax} · RIR {d.rirObjetivo}</span>
                 </li>
               ))}
             </ol>
