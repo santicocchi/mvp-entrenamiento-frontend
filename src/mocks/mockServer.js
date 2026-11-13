@@ -96,18 +96,27 @@ function validarSerie({ peso, repeticiones, rir }) {
 
 // RN10 y RN15
 function validarPlan({ nombre, rutinas }) {
-  if (!nombre?.trim()) error(422, 'El nombre del plan es obligatorio.');
-  if (!rutinas?.length || rutinas.some((r) => !r.dosificaciones?.length)) {
-    error(422, 'Cada rutina del plan tiene que tener al menos un ejercicio.');
-  }
+  if (!nombre?.trim()) error(422, 'El plan tiene que tener un nombre.');
+  if (!rutinas?.length) error(422, 'El plan tiene que tener al menos una rutina.');
   rutinas.forEach((r) => {
-    if (!r.nombre?.trim()) error(422, 'Cada rutina tiene que tener un nombre.');
-    const ids = r.dosificaciones.map((d) => d.ejercicio_id);
-    if (new Set(ids).size !== ids.length) error(422, 'Un ejercicio no se puede repetir en la misma rutina.');
+    if (!r.nombre?.trim()) error(422, 'La rutina tiene que tener un nombre.');
+    if (!r.dosificaciones?.length) error(422, 'La rutina tiene que tener al menos un ejercicio.');
     r.dosificaciones.forEach((d) => {
-      if (!(d.series_objetivo >= 1)) error(422, 'Las series objetivo tienen que ser al menos 1.');
-      if (!(d.reps_min <= d.reps_max)) error(422, 'Las repeticiones mínimas no pueden superar a las máximas.');
-      if (!(d.rir_objetivo >= 0)) error(422, 'El RIR objetivo no puede ser negativo.');
+      if (!Number.isInteger(d.reps_min) || d.reps_min < 1) error(422, 'Las repeticiones tienen que ser mayores a 0.');
+      if (d.reps_min > d.reps_max) error(422, 'Las repeticiones mínimas no pueden ser mayores a las máximas.');
+      if (!Number.isInteger(d.series_objetivo) || d.series_objetivo < 1) error(422, 'Las series objetivo tienen que ser 1 o más.');
+      if (!Number.isInteger(d.rir_objetivo) || d.rir_objetivo < 0) error(422, 'El RIR objetivo no puede ser negativo.');
+    });
+    const ids = r.dosificaciones.map((d) => d.ejercicio_id);
+    if (new Set(ids).size !== ids.length) error(422, 'El ejercicio no puede repetirse dentro de la rutina.');
+    // El orden tiene que ser 1, 2, 3… sin huecos ni repetidos
+    const ordenes = r.dosificaciones.map((d) => d.orden).sort((a, b) => a - b);
+    if (ordenes.some((orden, i) => orden !== i + 1)) {
+      error(422, 'El orden de los ejercicios tiene que ser correlativo, empezando en 1.');
+    }
+    // Contrato de POST /planes: ejercicio que no está en el catálogo → 404
+    r.dosificaciones.forEach((d) => {
+      if (!db.ejercicios.some((e) => e.id === d.ejercicio_id)) error(404, `El ejercicio ${d.ejercicio_id} no existe en el catálogo.`);
     });
   });
 }

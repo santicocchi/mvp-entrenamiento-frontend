@@ -176,3 +176,58 @@ a { color: var(--primario); }
 .etiqueta-brazo { background: #d5c2f2; color: #43237a; }
 .etiqueta-core { background: #a8e0dc; color: #07494a; }
 .etiqueta-sub { background: transparent; border: 1px solid currentColor; }
+
+/* Armar plan: secciones, rutinas con ejercicios en fila y barra de guardado fija */
+.seccion-plan { background: var(--superficie); border-radius: var(--radio); padding: 1rem 1.25rem; margin: 1rem 0; display: grid; gap: 0.9rem; }
+.seccion-plan h2 { margin: 0; }
+.panel-historial { background: #f5f8fa; border: 1px dashed var(--borde); border-radius: var(--radio); padding: 0.75rem 0.9rem; }
+.panel-historial .campo { max-width: 460px; }
+
+.rutina-editor { background: var(--superficie); border-radius: var(--radio); border-left: 6px solid var(--primario); padding: 1rem 1.25rem; margin: 1rem 0; display: grid; gap: 0.75rem; }
+.rutina-cabecera { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.rutina-cabecera .input-titulo { flex: 1; min-width: 180px; max-width: 360px; }
+.rutina-cabecera .numero-serie { background: var(--primario); }
+
+.ejercicios-rutina { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.fila-ejercicio { background: var(--fondo); border-radius: var(--radio); padding: 0.6rem 0.75rem; }
+.fila-principal { display: grid; grid-template-columns: auto minmax(160px, 1fr) auto auto; gap: 0.75rem 1rem; align-items: center; }
+.orden-ejercicio { display: flex; align-items: center; gap: 0.5rem; }
+.mover { display: flex; flex-direction: column; gap: 0.2rem; }
+.mover .boton-icono { width: 1.5rem; height: 1.2rem; line-height: 1; padding: 0; font-size: 0.8rem; background: var(--superficie); }
+.ejercicio-nombre { display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+.dosis-campos { display: flex; gap: 0.5rem; }
+.campo-mini { display: grid; gap: 0.15rem; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--suave); }
+.campo-mini input { width: 4.25rem; font: inherit; font-size: 1rem; font-weight: 500; text-align: center; text-transform: none; letter-spacing: 0; padding: 0.4rem 0.3rem; border: 1px solid var(--borde); border-radius: var(--radio); background: #fff; color: var(--tinta); }
+.acciones-ejercicio { display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap; }
+.historial-ejercicio { margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px solid var(--borde); }
+
+.selector-ejercicios { background: #f5f8fa; border: 1px solid var(--borde); border-radius: var(--radio); padding: 0.75rem; }
+.selector-cabecera { display: flex; gap: 0.75rem; align-items: center; }
+.selector-cabecera input { flex: 1; font: inherit; padding: 0.5rem 0.65rem; border: 1px solid var(--borde); border-radius: var(--radio); background: #fff; color: var(--tinta); }
+.selector-ejercicios .filtros { margin: 0.6rem 0 0.4rem; }
+.selector-lista { list-style: none; margin: 0.4rem 0 0; padding: 0; max-height: 280px; overflow-y: auto; display: grid; gap: 0.25rem; }
+.selector-item { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; background: var(--superficie); border-radius: var(--radio); padding: 0.4rem 0.6rem; }
+.selector-nombre { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.boton-chico { padding: 0.25rem 0.75rem; font-size: 0.9rem; }
+
+.barra-guardar { position: sticky; bottom: 0; z-index: 5; display: flex; justify-content: space-between; align-items: center; gap: 1rem; background: var(--superficie); border-top: 3px solid var(--primario); box-shadow: 0 -4px 12px rgba(24, 35, 47, 0.08); margin: 1.5rem -1rem 0; padding: 0.75rem 1rem; }
+.barra-guardar .alerta { margin: 0.35rem 0 0; }
+.resumen-plan { font-family: var(--titulos); font-size: 1.2rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 760px) {
+  .fila-principal { grid-template-columns: auto 1fr; }
+  .dosis-campos, .acciones-ejercicio { grid-column: 1 / -1; }
+  .acciones-ejercicio { justify-content: flex-start; }
+  .barra-guardar { flex-direction: column; align-items: stretch; }
+}
+
+/* Armar plan: pestañas de rutinas */
+.pestanas { display: flex; gap: 0.25rem; flex-wrap: wrap; border-bottom: 2px solid var(--borde); margin-top: 0.5rem; }
+.pestana { font: inherit; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; background: transparent; border: none; border-bottom: 3px solid transparent; margin-bottom: -2px; padding: 0.55rem 0.9rem; color: var(--suave); cursor: pointer; }
+.pestana:hover { color: var(--tinta); }
+.pestana-activa { color: var(--primario); border-bottom-color: var(--primario); }
+.pestana-agregar { color: var(--primario); }
+.pestana-cantidad { font-size: 0.75rem; min-width: 1.4rem; text-align: center; padding: 0.05rem 0.35rem; border-radius: 999px; background: var(--fondo); color: var(--suave); font-variant-numeric: tabular-nums; }
+.pestana-activa .pestana-cantidad { background: var(--primario); color: #fff; }
+.pestana-vacia { background: var(--record-fondo); color: #7a5a0e; }
+.pestanas + [role='tabpanel'] .rutina-editor { margin-top: 0; border-top-left-radius: 0; border-top-right-radius: 0; }
