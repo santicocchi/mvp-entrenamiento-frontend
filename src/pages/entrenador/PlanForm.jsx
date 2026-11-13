@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useArmarPlan } from '../../hooks/useArmarPlan';
 import { useCarga } from '../../hooks/useCarga';
 import { planesService } from '../../services/planes.service';
 import { ejerciciosService } from '../../services/ejercicios.service';
 import { deportistasService } from '../../services/deportistas.service';
-import { Cargando, MensajeError, Vacio } from '../../components/Estado';
-import { GRUPOS } from './Catalogo';
+import { Cargando, MensajeError } from '../../components/Estado';
+import EditorRutina from '../../components/plan/EditorRutina';
 import GraficoEvolucion from '../../components/GraficoEvolucion';
 
 // Ruta /entrenador/planes/nuevo y /entrenador/planes/:id/editar
@@ -24,7 +24,23 @@ function EditorPlan({ planId, planExistente }) {
   const navigate = useNavigate();
   const { plan, acciones, guardar, guardando, error } = useArmarPlan(planExistente);
   const { datos: deportistas } = useCarga(() => deportistasService.listar());
+  // El catálogo se carga una sola vez y se comparte con todas las rutinas
+  const { datos: catalogo, error: errorCatalogo } = useCarga(() => ejerciciosService.listar());
   const [deportistaHistorial, setDeportistaHistorial] = useState('');
+  // Se edita una rutina a la vez (pestañas); si la elegida ya no existe, queda la primera
+  const [claveActiva, setClaveActiva] = useState(null);
+  const rutinaActiva = plan.rutinas.find((r) => r.clave === claveActiva) ?? plan.rutinas[0];
+
+  // Al quitar la rutina abierta se pasa a la pestaña anterior (o a la siguiente si era la primera)
+  const quitarRutinaActiva = (clave) => {
+    const indice = plan.rutinas.findIndex((r) => r.clave === clave);
+    const vecina = plan.rutinas[indice - 1] ?? plan.rutinas[indice + 1];
+    acciones.quitarRutina(clave);
+    if (vecina) setClaveActiva(vecina.clave);
+  };
+
+  const ejerciciosPorId = useMemo(() => new Map((catalogo ?? []).map((e) => [e.id, e])), [catalogo]);
+  const totalEjercicios = plan.rutinas.reduce((suma, r) => suma + r.dosificaciones.length, 0);
 
   const enviar = async (e) => {
     e.preventDefault();
@@ -32,167 +48,91 @@ function EditorPlan({ planId, planExistente }) {
     if (idGuardado) navigate(`/entrenador/planes/${idGuardado}`);
   };
 
+  // Corrección del profe / CU19: al armar el plan, ver el peso máximo por sesión del deportista en ese ejercicio
+  const renderHistorial = deportistaHistorial
+    ? (ejercicioId) => <HistorialEjercicio deportistaId={deportistaHistorial} ejercicioId={ejercicioId} />
+    : undefined;
+
   return (
-    <form onSubmit={enviar}>
+    <form onSubmit={enviar} className="armar-plan" noValidate>
       <Link to={planId ? `/entrenador/planes/${planId}` : '/entrenador/planes'} className="volver">Cancelar</Link>
       <h1>{planId ? 'Modificar plan' : 'Armar plan'}</h1>
+      <p className="texto-suave">Definí las rutinas y la dosificación de cada ejercicio. Podés guardarlo sin asignarlo todavía.</p>
 
-      <div className="grilla-2">
+      <section className="seccion-plan">
+        <h2>Datos del plan</h2>
         <label className="campo">
           Nombre del plan
-          <input value={plan.nombre} onChange={(e) => acciones.cambiarDatos('nombre', e.target.value)} required />
+          <input value={plan.nombre} onChange={(e) => acciones.cambiarDatos('nombre', e.target.value)} placeholder="Ej.: Fuerza" required />
         </label>
         <label className="campo">
-          Ver historial de un deportista mientras armás
-          <select value={deportistaHistorial} onChange={(e) => setDeportistaHistorial(e.target.value)}>
-            <option value="">Ninguno</option>
-            {deportistas?.map((d) => <option key={d.id} value={d.id}>{d.nombre}</option>)}
-          </select>
+          Indicaciones generales <span className="texto-suave">(opcional)</span>
+          <textarea
+            rows={2}
+            value={plan.indicaciones}
+            onChange={(e) => acciones.cambiarDatos('indicaciones', e.target.value)}
+            placeholder="Entrada en calor, pausas, velocidad de ejecución…"
+          />
         </label>
+        <div className="panel-historial">
+          <label className="campo">
+            Deportista (opcional)
+            <select value={deportistaHistorial} onChange={(e) => setDeportistaHistorial(e.target.value)}>
+              <option value="">Ninguno</option>
+              {deportistas?.map((d) => <option key={d.id} value={d.id}>{d.nombre}</option>)}
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <h2>Rutinas</h2>
+      <MensajeError>{errorCatalogo?.message}</MensajeError>
+
+      <div className="pestanas" role="tablist" aria-label="Rutinas del plan">
+        {plan.rutinas.map((r, i) => (
+          <button
+            key={r.clave}
+            type="button"
+            role="tab"
+            aria-selected={r.clave === rutinaActiva.clave}
+            className={`pestana ${r.clave === rutinaActiva.clave ? 'pestana-activa' : ''}`}
+            onClick={() => setClaveActiva(r.clave)}
+          >
+            {r.nombre.trim() || `Rutina ${i + 1}`}
+            <span className={`pestana-cantidad ${r.dosificaciones.length === 0 ? 'pestana-vacia' : ''}`}>{r.dosificaciones.length}</span>
+          </button>
+        ))}
+        <button type="button" className="pestana pestana-agregar" onClick={() => setClaveActiva(acciones.agregarRutina())}>
+          + Agregar rutina
+        </button>
       </div>
-      <label className="campo">
-        Indicaciones
-        <textarea rows={2} value={plan.indicaciones} onChange={(e) => acciones.cambiarDatos('indicaciones', e.target.value)} />
-      </label>
 
-      {plan.rutinas.map((rutina) => (
+      <div role="tabpanel">
         <EditorRutina
-          key={rutina.clave}
-          rutina={rutina}
-          acciones={acciones}
+          key={rutinaActiva.clave}
+          numero={plan.rutinas.indexOf(rutinaActiva) + 1}
+          rutina={rutinaActiva}
+          catalogo={catalogo}
+          ejerciciosPorId={ejerciciosPorId}
+          acciones={{ ...acciones, quitarRutina: quitarRutinaActiva }}
           puedeQuitarse={plan.rutinas.length > 1}
-          deportistaHistorial={deportistaHistorial}
+          renderHistorial={renderHistorial}
         />
-      ))}
+      </div>
 
-      <button type="button" className="boton-secundario" onClick={acciones.agregarRutina}>Agregar rutina</button>
-
-      <MensajeError>{error}</MensajeError>
-      <div className="acciones-pie">
+      <div className="barra-guardar">
+        <div>
+          <span className="resumen-plan">
+            {plan.rutinas.length} {plan.rutinas.length === 1 ? 'rutina' : 'rutinas'} · {totalEjercicios} {totalEjercicios === 1 ? 'ejercicio' : 'ejercicios'}
+          </span>
+          <MensajeError>{error}</MensajeError>
+        </div>
         <button className="boton" disabled={guardando}>{guardando ? 'Guardando…' : 'Guardar plan'}</button>
       </div>
     </form>
   );
 }
 
-function EditorRutina({ rutina, acciones, puedeQuitarse, deportistaHistorial }) {
-  const [grupo, setGrupo] = useState('');
-  const [ejercicioElegido, setEjercicioElegido] = useState('');
-  const { datos: catalogo } = useCarga(() => ejerciciosService.listar(grupo), [grupo]);
-  const disponibles = catalogo?.filter((e) => !rutina.dosificaciones.some((d) => d.ejercicio_id === e.id)) ?? [];
-
-  const agregar = () => {
-    const ejercicio = catalogo?.find((e) => e.id === Number(ejercicioElegido));
-    if (ejercicio) acciones.agregarEjercicio(rutina.clave, ejercicio);
-    setEjercicioElegido('');
-  };
-
-  const numero = (campo, d, min = 0) => (
-    <input
-      type="number"
-      min={min}
-      value={d[campo]}
-      onChange={(e) => acciones.cambiarDosificacion(rutina.clave, d.ejercicio_id, campo, e.target.value)}
-      aria-label={campo}
-    />
-  );
-
-  return (
-    <fieldset className="bloque-rutina">
-      <div className="encabezado">
-        <input
-          className="input-titulo"
-          value={rutina.nombre}
-          onChange={(e) => acciones.renombrarRutina(rutina.clave, e.target.value)}
-          aria-label="Nombre de la rutina"
-          required
-        />
-        {puedeQuitarse && (
-          <button type="button" className="boton-texto" onClick={() => acciones.quitarRutina(rutina.clave)}>Quitar rutina</button>
-        )}
-      </div>
-
-      {rutina.dosificaciones.length === 0 && <Vacio>Agregá al menos un ejercicio del catálogo.</Vacio>}
-      {rutina.dosificaciones.length > 0 && (
-        <div className="tabla-contenedor">
-          <table className="tabla tabla-dosificacion">
-            <thead>
-              <tr><th>Orden</th><th>Ejercicio</th><th>Series</th><th>Reps mín.</th><th>Reps máx.</th><th>RIR</th><th></th></tr>
-            </thead>
-            <tbody>
-              {rutina.dosificaciones.map((d, i) => (
-                <FilaDosificacion
-                  key={d.ejercicio_id}
-                  d={d}
-                  indice={i}
-                  total={rutina.dosificaciones.length}
-                  numero={numero}
-                  onMover={(dir) => acciones.moverEjercicio(rutina.clave, i, dir)}
-                  onQuitar={() => acciones.quitarEjercicio(rutina.clave, d.ejercicio_id)}
-                  deportistaHistorial={deportistaHistorial}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <div className="fila-formulario">
-        <label className="campo">
-          Grupo
-          <select value={grupo} onChange={(e) => setGrupo(e.target.value)}>
-            {GRUPOS.map((g) => <option key={g.valor} value={g.valor}>{g.texto}</option>)}
-          </select>
-        </label>
-        <label className="campo campo-ancho">
-          Ejercicio
-          <select value={ejercicioElegido} onChange={(e) => setEjercicioElegido(e.target.value)}>
-            <option value="">Elegí un ejercicio</option>
-            {disponibles.map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}
-          </select>
-        </label>
-        <button type="button" className="boton-secundario" onClick={agregar} disabled={!ejercicioElegido}>Agregar ejercicio</button>
-      </div>
-    </fieldset>
-  );
-}
-
-function FilaDosificacion({ d, indice, total, numero, onMover, onQuitar, deportistaHistorial }) {
-  const [verHistorial, setVerHistorial] = useState(false);
-
-  return (
-    <>
-      <tr>
-        <td className="celda-orden">
-          <button type="button" className="boton-icono" onClick={() => onMover(-1)} disabled={indice === 0} aria-label="Subir">↑</button>
-          <button type="button" className="boton-icono" onClick={() => onMover(1)} disabled={indice === total - 1} aria-label="Bajar">↓</button>
-        </td>
-        <td>{d.ejercicio_nombre}</td>
-        <td>{numero('series_objetivo', d, 1)}</td>
-        <td>{numero('reps_min', d, 1)}</td>
-        <td>{numero('reps_max', d, 1)}</td>
-        <td>{numero('rir_objetivo', d, 0)}</td>
-        <td className="celda-acciones">
-          {deportistaHistorial && (
-            <button type="button" className="boton-texto" onClick={() => setVerHistorial(!verHistorial)}>
-              {verHistorial ? 'Ocultar historial' : 'Historial'}
-            </button>
-          )}
-          <button type="button" className="boton-texto" onClick={onQuitar}>Quitar</button>
-        </td>
-      </tr>
-      {deportistaHistorial && verHistorial && (
-        <tr className="fila-historial">
-          <td colSpan={7}>
-            <HistorialEjercicio deportistaId={deportistaHistorial} ejercicioId={d.ejercicio_id} />
-          </td>
-        </tr>
-      )}
-    </>
-  );
-}
-
-// Corrección del profe / CU19: al armar el plan, ver el peso máximo por sesión del deportista en ese ejercicio.
 function HistorialEjercicio({ deportistaId, ejercicioId }) {
   const { datos, cargando, error } = useCarga(
     () => deportistasService.progresoEnEjercicio(deportistaId, ejercicioId),

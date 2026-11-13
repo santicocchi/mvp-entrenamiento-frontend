@@ -46,9 +46,10 @@ export default function PlanDetalle() {
             <h2>{r.nombre}</h2>
             <ol className="lista-ejercicios">
               {r.dosificaciones.map((d) => (
-                <li key={d.ejercicio_id}>
-                  <span>{d.ejercicio_nombre}</span>
-                  <span className="dosis">{d.series_objetivo} × {d.reps_min}–{d.reps_max} · RIR {d.rir_objetivo}</span>
+                <li key={d.ejercicioId}>
+                  <span className="numero-serie">{d.orden}</span>
+                  <span>{d.ejercicioNombre}</span>
+                  <span className="dosis">{d.seriesObjetivo} × {d.repsMin}–{d.repsMax} · RIR {d.rirObjetivo}</span>
                 </li>
               ))}
             </ol>
