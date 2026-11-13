@@ -18,17 +18,10 @@ class ErrorHttp extends Error {
 const error = (status, mensaje) => { throw new ErrorHttp(status, mensaje); };
 
 // ---------- Auth ----------
-const crearTokens = (usuario) => ({
-  access_token: `mock-access-${usuario.id}`,
-  refresh_token: `mock-refresh-${usuario.id}`,
-});
-
 function usuarioDelToken(token) {
   const id = Number(token?.replace('mock-access-', ''));
   return db.usuarios.find((u) => u.id === id) ?? null;
 }
-
-const usuarioPublico = ({ id, nombre, email, rol }) => ({ id, nombre, email, rol });
 
 // ---------- Helpers de dominio (en el back esto lo deciden entidades, VOs y services de dominio) ----------
 const nombreEjercicio = (id) => db.ejercicios.find((e) => e.id === id)?.nombre ?? `Ejercicio ${id}`;
@@ -146,65 +139,7 @@ const ruta = (method, patron, opciones, handler) => {
 const ENTRENADOR = ['ENTRENADOR'];
 const DEPORTISTA = ['DEPORTISTA'];
 
-// ---- auth ----
-ruta('POST', '/auth/register', { publica: true }, ({ body }) => {
-  const { nombre, email, contrasena, rol } = body ?? {};
-  if (!nombre?.trim()) error(422, 'El nombre es obligatorio.');
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email ?? '')) error(422, 'El email no tiene un formato válido.');
-  if ((contrasena ?? '').length < 8) error(422, 'La contraseña debe tener al menos 8 caracteres.');
-  if (!/[A-Za-z]/.test(contrasena) || !/\d/.test(contrasena)) error(422, 'La contraseña debe tener al menos una letra y un número.');
-  if (!['ENTRENADOR', 'DEPORTISTA'].includes(rol)) error(422, 'El rol debe ser ENTRENADOR o DEPORTISTA.');
-  const emailNormalizado = email.trim().toLowerCase();
-  if (db.usuarios.some((u) => u.email === emailNormalizado)) error(422, 'Ya existe una cuenta con ese email.');
-  const usuario = { id: siguienteId('usuario'), nombre: nombre.trim(), email: emailNormalizado, contrasena, rol };
-  db.usuarios.push(usuario);
-  return [201, usuarioPublico(usuario)];
-});
-
-ruta('POST', '/auth/login', { publica: true }, ({ body }) => {
-  const usuario = db.usuarios.find((u) => u.email === body?.email?.trim().toLowerCase());
-  if (!usuario || usuario.contrasena !== body?.contrasena) error(401, 'Email o contraseña incorrectos.');
-  return [200, { ...crearTokens(usuario), usuario: usuarioPublico(usuario) }];
-});
-
-ruta('POST', '/auth/refresh', { publica: true }, ({ body }) => {
-  const id = Number(body?.refresh_token?.replace('mock-refresh-', ''));
-  const usuario = db.usuarios.find((u) => u.id === id);
-  if (!usuario) error(401, 'Sesión vencida.');
-  return [200, crearTokens(usuario)];
-});
-
-ruta('GET', '/usuario/perfil', {}, ({ usuario }) => [200, usuarioPublico(usuario)]);
-
 // ---- deportistas ----
-ruta('GET', '/deportistas', { roles: ENTRENADOR }, ({ usuario }) => {
-  const lista = db.vinculos
-    .filter((v) => v.entrenador_id === usuario.id)
-    .map((v) => {
-      const d = db.usuarios.find((u) => u.id === v.deportista_id);
-      const vigente = planVigenteDe(d.id);
-      return {
-        id: d.id,
-        nombre: d.nombre,
-        email: d.email,
-        plan_vigente: vigente
-          ? { nombre: vigente.plan.nombre, vigencia_desde: vigente.asignacion.vigencia_desde, vigencia_hasta: vigente.asignacion.vigencia_hasta }
-          : null,
-      };
-    });
-  return [200, lista];
-});
-
-ruta('POST', '/deportistas', { roles: ENTRENADOR }, ({ usuario, body }) => {
-  const deportista = db.usuarios.find((u) => u.email === body?.email?.trim().toLowerCase() && u.rol === 'DEPORTISTA');
-  if (!deportista) error(422, 'No existe una cuenta de deportista con ese email.');
-  if (db.vinculos.some((v) => v.deportista_id === deportista.id)) {
-    error(422, `${deportista.nombre.split(' ')[0]} ya tiene entrenador.`); // E12
-  }
-  db.vinculos.push({ entrenador_id: usuario.id, deportista_id: deportista.id });
-  return [201, { id: deportista.id, nombre: deportista.nombre, email: deportista.email }];
-});
-
 ruta('GET', '/deportistas/:id/asistencia', { roles: ENTRENADOR }, ({ usuario, params, query }) => {
   const deportistaId = Number(params.id);
   deportistaVinculado(usuario.id, deportistaId);
@@ -478,7 +413,7 @@ export const mockServer = {
     await esperar(200); // simula la latencia de red
     const [ruta, textoQuery = ''] = rutaConQuery.split('?');
     const query = new URLSearchParams(textoQuery);
-    const token = JSON.parse(localStorage.getItem('mvp-entrenamiento-sesion') ?? 'null')?.access_token;
+    const token = JSON.parse(localStorage.getItem('mvp-entrenamiento-sesion') ?? 'null')?.accessToken;
 
     for (const r of rutas) {
       if (r.method !== method) continue;

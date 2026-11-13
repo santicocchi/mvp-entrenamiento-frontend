@@ -1,4 +1,4 @@
-// Guarda la sesión del usuario (tokens + datos básicos) en localStorage.
+// Guarda la sesión del usuario { accessToken, refreshToken, usuario } en localStorage.
 const CLAVE = 'mvp-entrenamiento-sesion';
 
 export const tokenStorage = {
@@ -15,15 +15,15 @@ export const tokenStorage = {
   actualizarTokens(accessToken, refreshToken) {
     const sesion = this.obtener();
     if (!sesion) return;
-    this.guardar({ ...sesion, access_token: accessToken, refresh_token: refreshToken });
+    this.guardar({ ...sesion, accessToken, refreshToken });
   },
   limpiar() {
     localStorage.removeItem(CLAVE);
   },
   accessToken() {
-    return this.obtener()?.access_token ?? null;
+    return this.obtener()?.accessToken ?? null;
   },
   refreshToken() {
-    return this.obtener()?.refresh_token ?? null;
+    return this.obtener()?.refreshToken ?? null;
   },
 };
