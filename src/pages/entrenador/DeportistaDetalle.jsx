@@ -24,8 +24,8 @@ export default function DeportistaDetalle() {
       <h1>{deportista?.nombre ?? 'Deportista'}</h1>
       {deportista && (
         <p className="texto-suave">
-          {deportista.plan_vigente
-            ? `Plan vigente: ${deportista.plan_vigente.nombre}, del ${formatearFecha(deportista.plan_vigente.vigencia_desde)} al ${formatearFecha(deportista.plan_vigente.vigencia_hasta)}`
+          {deportista.planVigente
+            ? `Plan vigente: ${deportista.planVigente.nombre}, del ${formatearFecha(deportista.planVigente.desde)} al ${formatearFecha(deportista.planVigente.hasta)}`
             : 'Sin plan vigente'}
         </p>
       )}

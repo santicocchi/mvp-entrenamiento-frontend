@@ -30,7 +30,7 @@ export default function Deportistas() {
     <section>
       <h1>Mis deportistas</h1>
 
-      <form className="fila-formulario" onSubmit={vincular}>
+      <form className="fila-formulario" onSubmit={vincular} noValidate>
         <label className="campo campo-ancho">
           Vincular deportista por email
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="deportista@email.com" required />
@@ -54,10 +54,10 @@ export default function Deportistas() {
                 <tr key={d.id}>
                   <td>{d.nombre}</td>
                   <td>{d.email}</td>
-                  <td>{d.plan_vigente?.nombre ?? <span className="texto-suave">Sin plan</span>}</td>
+                  <td>{d.planVigente?.nombre ?? <span className="texto-suave">Sin plan</span>}</td>
                   <td>
-                    {d.plan_vigente
-                      ? `${formatearFecha(d.plan_vigente.vigencia_desde)} al ${formatearFecha(d.plan_vigente.vigencia_hasta)}`
+                    {d.planVigente
+                      ? `${formatearFecha(d.planVigente.desde)} al ${formatearFecha(d.planVigente.hasta)}`
                       : '—'}
                   </td>
                   <td><Link to={`/entrenador/deportistas/${d.id}`}>Ver asistencia</Link></td>

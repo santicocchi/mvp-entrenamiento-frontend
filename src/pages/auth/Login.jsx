@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth, rutaInicialPorRol } from '../../context/AuthContext';
 import { MensajeError } from '../../components/Estado';
-import { USE_MOCKS } from '../../config';
 
 // US-02
 export default function Login() {
@@ -31,7 +30,7 @@ export default function Login() {
 
   return (
     <div className="pantalla-acceso">
-      <form className="tarjeta-acceso" onSubmit={enviar}>
+      <form className="tarjeta-acceso" onSubmit={enviar} noValidate>
         <h1 className="titulo-acceso">MVP Entrenamiento</h1>
         <p className="texto-suave">Ingresá con tu cuenta.</p>
         <label className="campo">
@@ -45,11 +44,6 @@ export default function Login() {
         <MensajeError>{error}</MensajeError>
         <button className="boton" disabled={enviando}>{enviando ? 'Ingresando…' : 'Ingresar'}</button>
         <p className="texto-suave">¿No tenés cuenta? <Link to="/registro">Crear cuenta</Link></p>
-        {USE_MOCKS && (
-          <p className="ayuda-demo">
-            Demo: laura@gym.com (entrenadora) o juan@gym.com (deportista), contraseña clave1234.
-          </p>
-        )}
       </form>
     </div>
   );

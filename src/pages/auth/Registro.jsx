@@ -28,7 +28,7 @@ export default function Registro() {
 
   return (
     <div className="pantalla-acceso">
-      <form className="tarjeta-acceso" onSubmit={enviar}>
+      <form className="tarjeta-acceso" onSubmit={enviar} noValidate>
         <h1 className="titulo-acceso">Crear cuenta</h1>
         <label className="campo">
           Nombre
