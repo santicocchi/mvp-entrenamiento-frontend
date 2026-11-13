@@ -30,6 +30,7 @@ export default function PlanVigente() {
             <ol className="lista-ejercicios">
               {r.dosificaciones.map((d) => (
                 <li key={d.ejercicio_id}>
+                  <span className="numero-serie">{d.orden}</span>
                   <span>{d.ejercicio_nombre}</span>
                   <span className="dosis">{d.series_objetivo} × {d.reps_min}–{d.reps_max} · RIR {d.rir_objetivo}</span>
                 </li>

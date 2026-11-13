@@ -54,7 +54,7 @@ function EditorPlan({ planId, planExistente }) {
     : undefined;
 
   return (
-    <form onSubmit={enviar} className="armar-plan">
+    <form onSubmit={enviar} className="armar-plan" noValidate>
       <Link to={planId ? `/entrenador/planes/${planId}` : '/entrenador/planes'} className="volver">Cancelar</Link>
       <h1>{planId ? 'Modificar plan' : 'Armar plan'}</h1>
       <p className="texto-suave">Definí las rutinas y la dosificación de cada ejercicio. Podés guardarlo sin asignarlo todavía.</p>
