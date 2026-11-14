@@ -4,6 +4,17 @@ import { http } from '../api/httpClient';
 /** @typedef {{ id?: number, nombre: string, dosificaciones: Dosificacion[] }} Rutina */
 /** @typedef {{ id: number, nombre: string, indicaciones: string | null, rutinas: Rutina[] }} Plan */
 /** @typedef {{ id: number, nombre: string, rutinas: string[] }} PlanResumen */
+/** @typedef {{ planId: number, deportistaId: number, vigenciaDesde: string, vigenciaHasta: string }} Asignacion */
+
+/** @returns {Asignacion} */
+function aAsignacion(api) {
+  return {
+    planId: api.plan_id,
+    deportistaId: api.deportista_id,
+    vigenciaDesde: api.vigencia_desde,
+    vigenciaHasta: api.vigencia_hasta,
+  };
+}
 
 // Del back al front (snake_case → camelCase). `ejercicio_nombre` y el `id` de la rutina son
 // campos extra del contrato (ver CLAUDE.md): el front los usa si el back los devuelve.
@@ -76,6 +87,20 @@ export const planesService = {
   // US-10 · POST /api/planes/{id}/duplicado → { id } del plan nuevo
   duplicar: (planId) => http.post(`/planes/${planId}/duplicado`),
 
-  // US-08 · POST /api/planes/{id}/asignaciones { deportista_id, vigencia_desde, vigencia_hasta }
-  asignar: (planId, asignacion) => http.post(`/planes/${planId}/asignaciones`, asignacion),
+  /**
+   * US-08 · POST /api/planes/{id}/asignaciones { deportista_id, vigencia_desde, vigencia_hasta }
+   *         → 201 { plan_id, deportista_id, vigencia_desde, vigencia_hasta }
+   * Errores: 401, 403 (plan de otro entrenador), 404, 422 (RN10 fechas, RN11 superposición, RN14 vínculo).
+   * @param {number} planId
+   * @param {{ deportistaId: number, vigenciaDesde: string, vigenciaHasta: string }} asignacion
+   * @returns {Promise<Asignacion>}
+   */
+  asignar: async (planId, asignacion) =>
+    aAsignacion(
+      await http.post(`/planes/${planId}/asignaciones`, {
+        deportista_id: asignacion.deportistaId,
+        vigencia_desde: asignacion.vigenciaDesde,
+        vigencia_hasta: asignacion.vigenciaHasta,
+      }),
+    ),
 };

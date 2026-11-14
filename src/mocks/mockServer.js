@@ -231,7 +231,7 @@ ruta('POST', '/planes/:id/asignaciones', { roles: ENTRENADOR }, ({ usuario, para
   const deportistaId = Number(body?.deportista_id);
   const nueva = { deportista_id: deportistaId, vigencia_desde: body?.vigencia_desde, vigencia_hasta: body?.vigencia_hasta };
   if (!nueva.vigencia_desde || !nueva.vigencia_hasta) error(422, 'La vigencia tiene que tener fecha desde y hasta.');
-  if (nueva.vigencia_desde > nueva.vigencia_hasta) error(422, 'La fecha desde no puede ser posterior a la fecha hasta.');
+  if (nueva.vigencia_desde > nueva.vigencia_hasta) error(422, 'La fecha de inicio no puede ser posterior a la de fin.');
   if (!estaVinculado(usuario.id, deportistaId)) error(422, 'El deportista no está vinculado con vos.'); // E11
   // RN11: entre todos los planes del deportista
   const superpuesta = db.planes.flatMap((p) => p.asignaciones).find((a) => a.deportista_id === deportistaId && seSuperponen(a, nueva));
