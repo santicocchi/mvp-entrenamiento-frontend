@@ -68,7 +68,7 @@ export default function DeportistaDetalle() {
       {mediciones.datos?.length > 0 && (
         <GraficoEvolucion
           datos={mediciones.datos}
-          series={[{ clave: 'peso_corporal', nombre: 'Peso corporal', color: '#12607a' }]}
+          series={[{ clave: 'pesoCorporal', nombre: 'Peso corporal', color: '#12607a' }]}
         />
       )}
     </section>
