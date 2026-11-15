@@ -6,7 +6,7 @@ import { planVigenteService } from '../../services/plan-vigente.service';
 import { ejerciciosService } from '../../services/ejercicios.service';
 import { Cargando, MensajeError, Vacio } from '../../components/Estado';
 import FormularioSerie from '../../components/entrenar/FormularioSerie';
-import { formatearFecha } from '../../utils/fechas';
+import UltimaVez from '../../components/entrenar/UltimaVez';
 
 // Pantalla principal del deportista: US-14, US-15, US-16, US-17, US-18
 export default function Entrenar() {
@@ -116,19 +116,6 @@ function EjercicioSesion({ dosificacion: d, series, onRegistrar, onCorregir, des
 
       <FormularioSerie ultimaSerie={ultima} repeticionesObjetivo={d.repsMax} rirObjetivo={d.rirObjetivo} onRegistrar={onRegistrar} deshabilitado={deshabilitado} />
     </article>
-  );
-}
-
-// US-14: lo que hizo la última vez, visible al abrir el ejercicio (O2)
-function UltimaVez({ datos, cargando, error }) {
-  if (cargando) return null;
-  if (error) return <MensajeError>{error.message}</MensajeError>;
-  if (!datos?.fecha) return <p className="ultima-vez texto-suave">Primera vez con este ejercicio.</p>;
-  return (
-    <p className="ultima-vez">
-      <span className="texto-suave">Última vez, {formatearFecha(datos.fecha)}:</span>{' '}
-      {datos.series.map((s) => `${s.peso} × ${s.repeticiones}`).join(', ')}
-    </p>
   );
 }
 
