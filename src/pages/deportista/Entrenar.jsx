@@ -7,6 +7,7 @@ import { ejerciciosService } from '../../services/ejercicios.service';
 import { Cargando, MensajeError, Vacio } from '../../components/Estado';
 import FormularioSerie from '../../components/entrenar/FormularioSerie';
 import UltimaVez from '../../components/entrenar/UltimaVez';
+import FormularioCorreccion from '../../components/entrenar/FormularioCorreccion';
 
 // Pantalla principal del deportista: US-14, US-15, US-16, US-17, US-18
 export default function Entrenar() {
@@ -93,7 +94,7 @@ function EjercicioSesion({ dosificacion: d, series, onRegistrar, onCorregir, des
           {series.map((s) =>
             corrigiendo === s.id ? (
               <li key={s.id}>
-                <FormCorreccion
+                <FormularioCorreccion
                   serie={s}
                   onCancelar={() => setCorrigiendo(null)}
                   onGuardar={async (v) => {
@@ -116,48 +117,5 @@ function EjercicioSesion({ dosificacion: d, series, onRegistrar, onCorregir, des
 
       <FormularioSerie ultimaSerie={ultima} repeticionesObjetivo={d.repsMax} rirObjetivo={d.rirObjetivo} onRegistrar={onRegistrar} deshabilitado={deshabilitado} />
     </article>
-  );
-}
-
-function CamposSerie({ valores, onChange }) {
-  const cambiar = (campo) => (e) => onChange({ ...valores, [campo]: e.target.value });
-  return (
-    <div className="campos-serie">
-      <label className="campo">
-        Peso (kg)
-        <input type="number" step="0.5" min="0" inputMode="decimal" value={valores.peso} onChange={cambiar('peso')} required />
-      </label>
-      <label className="campo">
-        Reps
-        <input type="number" min="1" inputMode="numeric" value={valores.repeticiones} onChange={cambiar('repeticiones')} required />
-      </label>
-      <label className="campo">
-        RIR
-        <input type="number" min="0" inputMode="numeric" value={valores.rir} onChange={cambiar('rir')} required />
-      </label>
-    </div>
-  );
-}
-
-// US-17: solo el mismo día (RN8, lo valida el back)
-function FormCorreccion({ serie, onGuardar, onCancelar }) {
-  const [valores, setValores] = useState({ peso: serie.peso, repeticiones: serie.repeticiones, rir: serie.rir });
-  const [error, setError] = useState(null);
-
-  const guardar = async (e) => {
-    e.preventDefault();
-    setError(await onGuardar(valores));
-  };
-
-  return (
-    <form className="form-correccion" onSubmit={guardar}>
-      <span className="numero-serie">{serie.numero}</span>
-      <CamposSerie valores={valores} onChange={setValores} />
-      <div className="grupo-botones">
-        <button className="boton">Guardar</button>
-        <button type="button" className="boton-texto" onClick={onCancelar}>Cancelar</button>
-      </div>
-      <MensajeError>{error}</MensajeError>
-    </form>
   );
 }
