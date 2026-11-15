@@ -1,60 +1,134 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { seriesService } from '../services/series.service';
 import { sesionesService } from '../services/sesiones.service';
 
-// Use case del front: registrar y corregir series de la sesión de hoy (US-15, US-16, US-17, US-18).
-// La fecha y el número de serie los pone el back (RN7, RN12); el récord también lo decide el back (RN9).
+function normalizar(valores) {
+  const serie = {};
+  for (const [campo, etiqueta] of [
+    ['peso', 'El peso'],
+    ['repeticiones', 'Las repeticiones'],
+    ['rir', 'El RIR'],
+  ]) {
+    const valor = valores[campo];
+    if ((typeof valor !== 'number' && typeof valor !== 'string') || String(valor).trim() === '') {
+      throw new Error(
+        `${etiqueta} ${campo === 'repeticiones' ? 'son obligatorias' : 'es obligatorio'}.`,
+      );
+    }
+    serie[campo] = Number(String(valor).trim().replace(',', '.'));
+    if (!Number.isFinite(serie[campo]))
+      throw new Error(
+        `${etiqueta} ${campo === 'repeticiones' ? 'deben' : 'debe'} ser un número finito.`,
+      );
+  }
+  if (serie.peso < 0) throw new Error('El peso no puede ser negativo.');
+  if (Number(serie.peso.toFixed(2)) !== serie.peso)
+    throw new Error('El peso admite hasta 2 decimales.');
+  if (!Number.isSafeInteger(serie.repeticiones))
+    throw new Error('Las repeticiones deben ser un entero.');
+  if (serie.repeticiones <= 0) throw new Error('Las repeticiones tienen que ser mayores a 0.');
+  if (!Number.isSafeInteger(serie.rir)) throw new Error('El RIR debe ser un entero.');
+  if (serie.rir < 0) throw new Error('El RIR no puede ser negativo.');
+  return serie;
+}
+
+// US-15 a 18: el backend decide la fecha, la numeración, el cumplimiento y el récord.
 export function useRegistrarSerie(rutinaId) {
   const [sesion, setSesion] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
-  const [record, setRecord] = useState(null); // { ejercicioId, peso, repeticiones }
+  const [errorActualizacion, setErrorActualizacion] = useState(null);
+  const [actualizando, setActualizando] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [record, setRecord] = useState(null);
+  const generacion = useRef(0);
+  const envioEnCurso = useRef(null);
+
+  useEffect(() => {
+    const solicitud = ++generacion.current;
+    setSesion(null);
+    setCargando(true);
+    setError(null);
+    setErrorActualizacion(null);
+    setRecord(null);
+    setEnviando(false);
+    setActualizando(false);
+    envioEnCurso.current = null;
+    sesionesService
+      .deHoy(Number(rutinaId))
+      .then((datos) => {
+        if (generacion.current === solicitud) setSesion(datos);
+      })
+      .catch((fallo) => {
+        if (generacion.current === solicitud) setError(fallo.message);
+      })
+      .finally(() => {
+        if (generacion.current === solicitud) setCargando(false);
+      });
+    return () => {
+      generacion.current = solicitud + 1;
+    };
+  }, [rutinaId]);
 
   const recargar = useCallback(async () => {
+    const solicitud = generacion.current;
+    setActualizando(true);
     try {
-      setSesion(await sesionesService.deHoy(rutinaId));
+      const datos = await sesionesService.deHoy(Number(rutinaId));
+      if (generacion.current !== solicitud) return;
+      setSesion(datos);
       setError(null);
-    } catch (e) {
-      setError(e.message);
+      setErrorActualizacion(null);
+    } catch (fallo) {
+      if (generacion.current === solicitud) setErrorActualizacion(fallo.message);
     } finally {
-      setCargando(false);
+      if (generacion.current === solicitud) setActualizando(false);
     }
   }, [rutinaId]);
 
-  useEffect(() => {
-    recargar();
-  }, [recargar]);
-
-  const normalizar = ({ peso, repeticiones, rir }) => ({
-    peso: Number(peso),
-    repeticiones: Number(repeticiones),
-    rir: Number(rir),
-  });
-
-  // Devuelve null si salió bien, o el mensaje de error del back
-  const registrar = async (ejercicioId, valores) => {
+  const guardar = async (ejercicioId, valores, serieId) => {
+    const solicitud = generacion.current;
+    if (envioEnCurso.current === solicitud) return 'Esperá a que termine el registro en curso.';
+    if (errorActualizacion) return 'Actualizá la sesión antes de registrar otra serie.';
+    let serie;
     try {
-      const serie = normalizar(valores);
-      const respuesta = await seriesService.registrar({ rutina_id: Number(rutinaId), ejercicio_id: ejercicioId, ...serie });
-      if (respuesta.record_personal) setRecord({ ejercicioId, ...serie });
+      serie = normalizar(valores);
+    } catch (fallo) {
+      return fallo.message;
+    }
+    envioEnCurso.current = solicitud;
+    setEnviando(true);
+    try {
+      const respuesta =
+        serieId === undefined
+          ? await seriesService.registrar({ rutinaId: Number(rutinaId), ejercicioId, ...serie })
+          : await seriesService.corregir(serieId, serie);
+      if (generacion.current !== solicitud) return null;
+      setRecord(respuesta.recordPersonal ? { ejercicioId, ...serie } : null);
+      // El reintento de una consulta fallida nunca reenvía el POST exitoso.
       await recargar();
       return null;
-    } catch (e) {
-      return e.message;
+    } catch (fallo) {
+      return fallo.message;
+    } finally {
+      if (generacion.current === solicitud) {
+        envioEnCurso.current = null;
+        setEnviando(false);
+      }
     }
   };
 
-  const corregir = async (serieId, ejercicioId, valores) => {
-    try {
-      const serie = normalizar(valores);
-      const respuesta = await seriesService.corregir(serieId, serie);
-      if (respuesta.record_personal) setRecord({ ejercicioId, ...serie });
-      await recargar();
-      return null;
-    } catch (e) {
-      return e.message;
-    }
+  return {
+    sesion,
+    cargando,
+    error,
+    errorActualizacion,
+    actualizando,
+    enviando,
+    record,
+    recargar,
+    registrar: (ejercicioId, valores) => guardar(ejercicioId, valores),
+    corregir: (serieId, ejercicioId, valores) => guardar(ejercicioId, valores, serieId),
+    cerrarRecord: () => setRecord(null),
   };
-
-  return { sesion, cargando, error, registrar, corregir, record, cerrarRecord: () => setRecord(null) };
 }

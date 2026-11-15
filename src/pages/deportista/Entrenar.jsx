@@ -4,21 +4,26 @@ import { useRegistrarSerie } from '../../hooks/useRegistrarSerie';
 import { useCarga } from '../../hooks/useCarga';
 import { planVigenteService } from '../../services/plan-vigente.service';
 import { ejerciciosService } from '../../services/ejercicios.service';
-import { Cargando, MensajeError } from '../../components/Estado';
-import { formatearFecha } from '../../utils/fechas';
+import { Cargando, MensajeError, Vacio } from '../../components/Estado';
+import FormularioSerie from '../../components/entrenar/FormularioSerie';
+import UltimaVez from '../../components/entrenar/UltimaVez';
+import FormularioCorreccion from '../../components/entrenar/FormularioCorreccion';
 
 // Pantalla principal del deportista: US-14, US-15, US-16, US-17, US-18
 export default function Entrenar() {
   const { rutinaId } = useParams();
   const plan = useCarga(() => planVigenteService.obtener());
-  const { sesion, cargando, error, registrar, corregir, record, cerrarRecord } = useRegistrarSerie(rutinaId);
+  const { sesion, cargando, error, errorActualizacion, actualizando, enviando, recargar, registrar, corregir, record, cerrarRecord } = useRegistrarSerie(rutinaId);
 
   if (plan.cargando || cargando) return <Cargando />;
+  if (plan.error?.status === 404 || (!plan.error && !plan.datos)) return <Vacio>No tenés un plan vigente. Pedile uno a tu entrenador.</Vacio>;
   if (plan.error) return <MensajeError>{plan.error.message}</MensajeError>;
   if (error) return <MensajeError>{error}</MensajeError>;
 
   const rutina = plan.datos.rutinas.find((r) => r.id === Number(rutinaId));
-  const nombreDe = (ejercicioId) => rutina.dosificaciones.find((d) => d.ejercicio_id === ejercicioId)?.ejercicio_nombre;
+  if (!rutina) return <Vacio>La rutina no pertenece a tu plan vigente.</Vacio>;
+  if (!sesion || !rutina.dosificaciones.length) return <Vacio>La rutina no tiene ejercicios para registrar.</Vacio>;
+  const nombreDe = (ejercicioId) => rutina.dosificaciones.find((d) => d.ejercicioId === ejercicioId)?.ejercicioNombre;
 
   return (
     <section>
@@ -30,6 +35,14 @@ export default function Entrenar() {
           <span className="texto-suave">de la sesión</span>
         </div>
       </div>
+
+      {errorActualizacion && (
+        <div>
+          <p>La serie quedó guardada. Actualizá la sesión antes de seguir.</p>
+          <MensajeError>{errorActualizacion}</MensajeError>
+          <button type="button" className="boton-secundario" disabled={actualizando} onClick={recargar}>{actualizando ? 'Actualizando…' : 'Actualizar sesión'}</button>
+        </div>
+      )}
 
       {record && (
         <div className="aviso-record" role="status">
@@ -44,11 +57,12 @@ export default function Entrenar() {
       <div className="lista-ejercicios-sesion">
         {rutina.dosificaciones.map((d) => (
           <EjercicioSesion
-            key={d.ejercicio_id}
+            key={`${rutinaId}-${d.ejercicioId}`}
             dosificacion={d}
-            series={sesion.ejercicios.find((e) => e.ejercicio_id === d.ejercicio_id)?.series ?? []}
-            onRegistrar={(valores) => registrar(d.ejercicio_id, valores)}
-            onCorregir={(serieId, valores) => corregir(serieId, d.ejercicio_id, valores)}
+            series={sesion.ejercicios.find((e) => e.ejercicioId === d.ejercicioId)?.series ?? []}
+            onRegistrar={(valores) => registrar(d.ejercicioId, valores)}
+            onCorregir={(serieId, valores) => corregir(serieId, d.ejercicioId, valores)}
+            deshabilitado={enviando || actualizando || Boolean(errorActualizacion)}
           />
         ))}
       </div>
@@ -56,40 +70,31 @@ export default function Entrenar() {
   );
 }
 
-function EjercicioSesion({ dosificacion: d, series, onRegistrar, onCorregir }) {
-  const ultima = series[series.length - 1];
-  const [valores, setValores] = useState({ peso: ultima?.peso ?? '', repeticiones: d.reps_max, rir: d.rir_objetivo });
-  const [error, setError] = useState(null);
-  const [enviando, setEnviando] = useState(false);
+function EjercicioSesion({ dosificacion: d, series, onRegistrar, onCorregir, deshabilitado }) {
+  const historial = useCarga(() => ejerciciosService.ultimasSeries(d.ejercicioId), [d.ejercicioId]);
+  const ultima = series[series.length - 1] ?? historial.datos?.series.at(-1);
   const [corrigiendo, setCorrigiendo] = useState(null);
-  const completo = series.length >= d.series_objetivo;
-
-  const enviar = async (e) => {
-    e.preventDefault();
-    setEnviando(true);
-    setError(await onRegistrar(valores));
-    setEnviando(false);
-  };
+  const completo = series.length >= d.seriesObjetivo;
 
   return (
     <article className={`ejercicio ${completo ? 'ejercicio-completo' : ''}`}>
       <header className="encabezado">
         <div>
-          <h2>{d.ejercicio_nombre}</h2>
-          <span className="dosis">{d.series_objetivo} × {d.reps_min}–{d.reps_max} · RIR {d.rir_objetivo}</span>
+          <h2>{d.ejercicioNombre}</h2>
+          <span className="dosis">{d.seriesObjetivo} × {d.repsMin}–{d.repsMax} · RIR {d.rirObjetivo}</span>
         </div>
         {/* US-16 */}
-        <span className="contador-series">{series.length} de {d.series_objetivo} series</span>
+        <span className="contador-series">{series.length} de {d.seriesObjetivo} series</span>
       </header>
 
-      <UltimaVez ejercicioId={d.ejercicio_id} />
+      <UltimaVez {...historial} />
 
       {series.length > 0 && (
         <ol className="series-hoy">
           {series.map((s) =>
             corrigiendo === s.id ? (
               <li key={s.id}>
-                <FormCorreccion
+                <FormularioCorreccion
                   serie={s}
                   onCancelar={() => setCorrigiendo(null)}
                   onGuardar={async (v) => {
@@ -103,74 +108,14 @@ function EjercicioSesion({ dosificacion: d, series, onRegistrar, onCorregir }) {
               <li key={s.id}>
                 <span className="numero-serie">{s.numero}</span>
                 <span>{s.peso} kg × {s.repeticiones} · RIR {s.rir}</span>
-                <button type="button" className="boton-texto" onClick={() => setCorrigiendo(s.id)}>Corregir</button>
+                <button type="button" className="boton-texto" disabled={deshabilitado} onClick={() => setCorrigiendo(s.id)}>Corregir</button>
               </li>
             ),
           )}
         </ol>
       )}
 
-      <form className="form-serie" onSubmit={enviar}>
-        <CamposSerie valores={valores} onChange={setValores} />
-        <button className="boton" disabled={enviando}>{enviando ? 'Guardando…' : `Registrar serie ${series.length + 1}`}</button>
-      </form>
-      <MensajeError>{error}</MensajeError>
+      <FormularioSerie ultimaSerie={ultima} repeticionesObjetivo={d.repsMax} rirObjetivo={d.rirObjetivo} onRegistrar={onRegistrar} deshabilitado={deshabilitado} />
     </article>
-  );
-}
-
-// US-14: lo que hizo la última vez, visible al abrir el ejercicio (O2)
-function UltimaVez({ ejercicioId }) {
-  const { datos, cargando } = useCarga(() => ejerciciosService.ultimasSeries(ejercicioId), [ejercicioId]);
-  if (cargando) return null;
-  if (!datos?.fecha) return <p className="ultima-vez texto-suave">Primera vez con este ejercicio.</p>;
-  return (
-    <p className="ultima-vez">
-      <span className="texto-suave">Última vez, {formatearFecha(datos.fecha)}:</span>{' '}
-      {datos.series.map((s) => `${s.peso} × ${s.repeticiones}`).join(', ')}
-    </p>
-  );
-}
-
-function CamposSerie({ valores, onChange }) {
-  const cambiar = (campo) => (e) => onChange({ ...valores, [campo]: e.target.value });
-  return (
-    <div className="campos-serie">
-      <label className="campo">
-        Peso (kg)
-        <input type="number" step="0.5" min="0" inputMode="decimal" value={valores.peso} onChange={cambiar('peso')} required />
-      </label>
-      <label className="campo">
-        Reps
-        <input type="number" min="1" inputMode="numeric" value={valores.repeticiones} onChange={cambiar('repeticiones')} required />
-      </label>
-      <label className="campo">
-        RIR
-        <input type="number" min="0" inputMode="numeric" value={valores.rir} onChange={cambiar('rir')} required />
-      </label>
-    </div>
-  );
-}
-
-// US-17: solo el mismo día (RN8, lo valida el back)
-function FormCorreccion({ serie, onGuardar, onCancelar }) {
-  const [valores, setValores] = useState({ peso: serie.peso, repeticiones: serie.repeticiones, rir: serie.rir });
-  const [error, setError] = useState(null);
-
-  const guardar = async (e) => {
-    e.preventDefault();
-    setError(await onGuardar(valores));
-  };
-
-  return (
-    <form className="form-correccion" onSubmit={guardar}>
-      <span className="numero-serie">{serie.numero}</span>
-      <CamposSerie valores={valores} onChange={setValores} />
-      <div className="grupo-botones">
-        <button className="boton">Guardar</button>
-        <button type="button" className="boton-texto" onClick={onCancelar}>Cancelar</button>
-      </div>
-      <MensajeError>{error}</MensajeError>
-    </form>
   );
 }
