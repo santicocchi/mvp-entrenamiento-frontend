@@ -8,6 +8,7 @@ import { Cargando, MensajeError, Vacio } from '../../components/Estado';
 import FormularioSerie from '../../components/entrenar/FormularioSerie';
 import UltimaVez from '../../components/entrenar/UltimaVez';
 import FormularioCorreccion from '../../components/entrenar/FormularioCorreccion';
+import AvisoRecordPersonal from '../../components/entrenar/AvisoRecordPersonal';
 
 // Pantalla principal del deportista: US-14, US-15, US-16, US-17, US-18
 export default function Entrenar() {
@@ -44,15 +45,7 @@ export default function Entrenar() {
         </div>
       )}
 
-      {record && (
-        <div className="aviso-record" role="status">
-          <div>
-            <strong>Nuevo récord personal</strong>
-            <span>{nombreDe(record.ejercicioId)}: {record.peso} kg × {record.repeticiones}</span>
-          </div>
-          <button type="button" className="boton-texto" onClick={cerrarRecord}>Cerrar</button>
-        </div>
-      )}
+      <AvisoRecordPersonal record={record} nombreEjercicio={record ? nombreDe(record.ejercicioId) : ''} onCerrar={cerrarRecord} />
 
       <div className="lista-ejercicios-sesion">
         {rutina.dosificaciones.map((d) => (

@@ -9,6 +9,7 @@ function normalizar(valores) {
     ['repeticiones', 'Las repeticiones'],
     ['rir', 'El RIR'],
   ]) {
+    //Valida que el campo exista y que sea un número finito
     const valor = valores[campo];
     if ((typeof valor !== 'number' && typeof valor !== 'string') || String(valor).trim() === '') {
       throw new Error(
@@ -21,15 +22,22 @@ function normalizar(valores) {
         `${etiqueta} ${campo === 'repeticiones' ? 'deben' : 'debe'} ser un número finito.`,
       );
   }
+  //Valida que el peso sea positivo y tenga hasta 2 decimales
   if (serie.peso < 0) throw new Error('El peso no puede ser negativo.');
   if (Number(serie.peso.toFixed(2)) !== serie.peso)
     throw new Error('El peso admite hasta 2 decimales.');
+
+  //Valida que las repeticiones sean un entero positivo 
   if (!Number.isSafeInteger(serie.repeticiones))
     throw new Error('Las repeticiones deben ser un entero.');
   if (serie.repeticiones <= 0) throw new Error('Las repeticiones tienen que ser mayores a 0.');
+
+  //Valida que el RIR sea un entero no negativo
   if (!Number.isSafeInteger(serie.rir)) throw new Error('El RIR debe ser un entero.');
   if (serie.rir < 0) throw new Error('El RIR no puede ser negativo.');
-  return serie;
+
+ 
+  return serie;  //Serie normalizada
 }
 
 // US-15 a 18: el backend decide la fecha, la numeración, el cumplimiento y el récord.
@@ -56,20 +64,22 @@ export function useRegistrarSerie(rutinaId) {
     envioEnCurso.current = null;
     sesionesService
       .deHoy(Number(rutinaId))
-      .then((datos) => {
-        if (generacion.current === solicitud) setSesion(datos);
-      })
-      .catch((fallo) => {
-        if (generacion.current === solicitud) setError(fallo.message);
-      })
-      .finally(() => {
-        if (generacion.current === solicitud) setCargando(false);
+      .then(
+        (datos) => ({ datos }),
+        (fallo) => ({ fallo }),
+      )
+      .then((resultado) => {
+        if (generacion.current !== solicitud) return; // un solo chequeo
+
+        if (resultado.fallo) setError(resultado.fallo.message);
+        else setSesion(resultado.datos);
+        setCargando(false);
       });
     return () => {
-      generacion.current = solicitud + 1;
+      generacion.current++; // invalida la solicitud en curso
     };
   }, [rutinaId]);
-
+ 
   const recargar = useCallback(async () => {
     const solicitud = generacion.current;
     setActualizando(true);

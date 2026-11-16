@@ -4,6 +4,7 @@ import { http } from '../api/httpClient';
 
 /** @returns {Usuario} */
 export function aUsuario(api) {
+  console.log('aUsuario', api);
   return { id: api.id, nombre: api.nombre, email: api.email, rol: api.rol };
 }
 
