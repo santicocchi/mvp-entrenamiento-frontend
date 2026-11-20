@@ -12,7 +12,9 @@ export const authService = {
    * @param {DatosCuenta} datos
    */
   crearCuenta: async ({ nombre, email, contrasena, rol }) =>
-    aUsuario(await http.post('/auth/register', { nombre, email, contrasena, rol })),
+    aUsuario(await http.post('/auth/register', { nombre, email, contrasena, rol },
+      console.log('crearCuenta', { nombre, email, contrasena, rol })
+    )),
 
   /**
    * US-02 · POST /api/auth/login { email, contrasena } → Sesion
