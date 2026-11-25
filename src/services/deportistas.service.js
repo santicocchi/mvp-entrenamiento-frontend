@@ -28,8 +28,4 @@ export const deportistasService = {
   // US-12 · GET /api/deportistas/{id}/asistencia?desde&hasta → [{ fecha, rutina, cumplimiento }]
   asistencia: (deportistaId, desde, hasta) =>
     http.get(`/deportistas/${deportistaId}/asistencia`, { desde, hasta }),
-
-  // CU19 · GET /api/deportistas/{id}/progreso/{ejercicio_id} → [{ fecha, peso_maximo, repeticiones }]
-  progresoEnEjercicio: (deportistaId, ejercicioId) =>
-    http.get(`/deportistas/${deportistaId}/progreso/${ejercicioId}`),
 };
