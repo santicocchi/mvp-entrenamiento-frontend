@@ -5,6 +5,7 @@ import { useCarga } from '../../hooks/useCarga';
 import { planesService } from '../../services/planes.service';
 import { ejerciciosService } from '../../services/ejercicios.service';
 import { deportistasService } from '../../services/deportistas.service';
+import { progresoService } from '../../services/progreso.service';
 import { Cargando, MensajeError } from '../../components/Estado';
 import EditorRutina from '../../components/plan/EditorRutina';
 import GraficoEvolucion from '../../components/GraficoEvolucion';
@@ -135,7 +136,7 @@ function EditorPlan({ planId, planExistente }) {
 
 function HistorialEjercicio({ deportistaId, ejercicioId }) {
   const { datos, cargando, error } = useCarga(
-    () => deportistasService.progresoEnEjercicio(deportistaId, ejercicioId),
+    () => progresoService.deDeportista(deportistaId, ejercicioId),
     [deportistaId, ejercicioId],
   );
   if (cargando) return <Cargando />;
@@ -144,7 +145,7 @@ function HistorialEjercicio({ deportistaId, ejercicioId }) {
   return (
     <GraficoEvolucion
       datos={datos}
-      series={[{ clave: 'peso_maximo', nombre: 'Peso máximo', color: '#12607a' }]}
+      series={[{ clave: 'pesoMaximo', nombre: 'Peso máximo', color: '#12607a' }]}
       alto={200}
     />
   );
