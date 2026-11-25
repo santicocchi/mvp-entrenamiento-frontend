@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { sesionesService } from '../../services/sesiones.service';
 import { useCarga } from '../../hooks/useCarga';
 import { Cargando, MensajeError, Vacio } from '../../components/Estado';
-import { Cumplimiento } from '../entrenador/DeportistaDetalle';
+import Cumplimiento from '../../components/Cumplimiento';
 import { formatearFecha, hoy, sumarDias } from '../../utils/fechas';
 
 // US-20

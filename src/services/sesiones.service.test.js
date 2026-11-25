@@ -32,3 +32,15 @@ it('traduce la sesión conservando los números e ids asignados por el servidor'
   });
   expect(http.get).toHaveBeenCalledWith('/sesiones/hoy', { rutina_id: 1 });
 });
+
+it('asistencia (US-12): pide la asistencia del deportista en el rango y devuelve solo fecha, rutina y cumplimiento', async () => {
+  http.get.mockResolvedValue([
+    { fecha: '2026-10-21', rutina: 'Piernas', cumplimiento: 100 },
+    { fecha: '2026-10-14', rutina: 'Torso', cumplimiento: 67 },
+  ]);
+  expect(await sesionesService.asistencia(20, '2026-10-01', '2026-10-31')).toEqual([
+    { fecha: '2026-10-21', rutina: 'Piernas', cumplimiento: 100 },
+    { fecha: '2026-10-14', rutina: 'Torso', cumplimiento: 67 },
+  ]);
+  expect(http.get).toHaveBeenCalledWith('/deportistas/20/asistencia', { desde: '2026-10-01', hasta: '2026-10-31' });
+});
