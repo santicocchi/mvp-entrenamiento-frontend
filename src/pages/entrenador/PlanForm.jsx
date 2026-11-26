@@ -102,9 +102,11 @@ function EditorPlan({ planId, planExistente }) {
             <span className={`pestana-cantidad ${r.dosificaciones.length === 0 ? 'pestana-vacia' : ''}`}>{r.dosificaciones.length}</span>
           </button>
         ))}
-        <button type="button" className="pestana pestana-agregar" onClick={() => setClaveActiva(acciones.agregarRutina())}>
-          + Agregar rutina
-        </button>
+        {plan.rutinas.length < 7 && (
+          <button type="button" className="pestana pestana-agregar" onClick={() => setClaveActiva(acciones.agregarRutina())}>
+            + Agregar rutina
+          </button>
+        )}
       </div>
 
       <div role="tabpanel">
