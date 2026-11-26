@@ -24,8 +24,4 @@ export const deportistasService = {
 
   /** US-03 · POST /api/deportistas { email } → Deportista (planVigente: null) */
   vincular: async (email) => aDeportista(await http.post('/deportistas', { email })),
-
-  // US-12 · GET /api/deportistas/{id}/asistencia?desde&hasta → [{ fecha, rutina, cumplimiento }]
-  asistencia: (deportistaId, desde, hasta) =>
-    http.get(`/deportistas/${deportistaId}/asistencia`, { desde, hasta }),
 };

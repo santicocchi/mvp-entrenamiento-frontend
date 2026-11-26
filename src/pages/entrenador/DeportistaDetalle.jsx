@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { deportistasService } from '../../services/deportistas.service';
 import { medicionesService } from '../../services/mediciones.service';
+import { sesionesService } from '../../services/sesiones.service';
 import { useCarga } from '../../hooks/useCarga';
 import { Cargando, MensajeError, Vacio } from '../../components/Estado';
 import GraficoEvolucion from '../../components/GraficoEvolucion';
+import Cumplimiento from '../../components/Cumplimiento';
 import { formatearFecha, hoy, sumarDias } from '../../utils/fechas';
 
 // US-12: asistencia (fecha, rutina, cumplimiento; sin series, RN17) + evolución del peso corporal
@@ -15,7 +17,8 @@ export default function DeportistaDetalle() {
   const { datos: deportistas } = useCarga(() => deportistasService.listar());
   const deportista = deportistas?.find((d) => d.id === Number(id));
 
-  const asistencia = useCarga(() => deportistasService.asistencia(id, rango.desde, rango.hasta), [id, rango]);
+  // Por defecto, los últimos 30 días. El back valida el rango (desde ≤ hasta) y el vínculo (403).
+  const asistencia = useCarga(() => sesionesService.asistencia(id, rango.desde, rango.hasta), [id, rango]);
   const mediciones = useCarga(() => medicionesService.listar({ deportistaId: id }), [id]);
 
   return (
@@ -34,11 +37,11 @@ export default function DeportistaDetalle() {
       <div className="fila-formulario">
         <label className="campo">
           Desde
-          <input type="date" value={rango.desde} onChange={(e) => setRango({ ...rango, desde: e.target.value })} />
+          <input type="date" value={rango.desde} max={rango.hasta} onChange={(e) => setRango({ ...rango, desde: e.target.value })} />
         </label>
         <label className="campo">
           Hasta
-          <input type="date" value={rango.hasta} onChange={(e) => setRango({ ...rango, hasta: e.target.value })} />
+          <input type="date" value={rango.hasta} min={rango.desde} onChange={(e) => setRango({ ...rango, hasta: e.target.value })} />
         </label>
       </div>
       {asistencia.cargando && <Cargando />}
@@ -72,14 +75,5 @@ export default function DeportistaDetalle() {
         />
       )}
     </section>
-  );
-}
-
-export function Cumplimiento({ valor }) {
-  return (
-    <span className="cumplimiento">
-      <span className="cumplimiento-barra"><span style={{ width: `${valor}%` }} /></span>
-      {valor}%
-    </span>
   );
 }
