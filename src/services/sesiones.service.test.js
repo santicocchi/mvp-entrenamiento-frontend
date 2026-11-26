@@ -32,3 +32,35 @@ it('traduce la sesión conservando los números e ids asignados por el servidor'
   });
   expect(http.get).toHaveBeenCalledWith('/sesiones/hoy', { rutina_id: 1 });
 });
+
+it('US-20: traduce las sesiones del historial y manda el rango de fechas', async () => {
+  http.get.mockResolvedValue([
+    {
+      fecha: '2026-10-14',
+      rutina: 'Piernas',
+      cumplimiento: 50,
+      ejercicios: [
+        {
+          nombre: 'Sentadilla',
+          cumplimiento: 67,
+          series: [{ numero: 1, peso: 60, repeticiones: 8, rir: 2 }],
+        },
+      ],
+    },
+  ]);
+  expect(await sesionesService.listar('2026-10-01', '2026-10-31')).toEqual([
+    {
+      fecha: '2026-10-14',
+      rutina: 'Piernas',
+      cumplimiento: 50,
+      ejercicios: [
+        {
+          nombre: 'Sentadilla',
+          cumplimiento: 67,
+          series: [{ numero: 1, peso: 60, repeticiones: 8, rir: 2 }],
+        },
+      ],
+    },
+  ]);
+  expect(http.get).toHaveBeenCalledWith('/sesiones', { desde: '2026-10-01', hasta: '2026-10-31' });
+});
