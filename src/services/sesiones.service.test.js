@@ -33,6 +33,44 @@ it('traduce la sesión conservando los números e ids asignados por el servidor'
   expect(http.get).toHaveBeenCalledWith('/sesiones/hoy', { rutina_id: 1 });
 });
 
+it('US-20: traduce las sesiones del historial y manda el rango de fechas', async () => {
+  http.get.mockResolvedValue([
+    {
+      fecha: '2026-10-14',
+      rutina: 'Piernas',
+      cumplimiento: 50,
+      ejercicios: [
+        {
+          nombre: 'Sentadilla',
+          cumplimiento: 67,
+          series: [
+            { numero: 1, peso: 60, repeticiones: 8, rir: 2, record_personal: false },
+            { numero: 2, peso: 65, repeticiones: 8, rir: 1, record_personal: true },
+          ],
+        },
+      ],
+    },
+  ]);
+  expect(await sesionesService.listar('2026-10-01', '2026-10-31')).toEqual([
+    {
+      fecha: '2026-10-14',
+      rutina: 'Piernas',
+      cumplimiento: 50,
+      ejercicios: [
+        {
+          nombre: 'Sentadilla',
+          cumplimiento: 67,
+          series: [
+            { numero: 1, peso: 60, repeticiones: 8, rir: 2, recordPersonal: false },
+            { numero: 2, peso: 65, repeticiones: 8, rir: 1, recordPersonal: true },
+          ],
+        },
+      ],
+    },
+  ]);
+  expect(http.get).toHaveBeenCalledWith('/sesiones', { desde: '2026-10-01', hasta: '2026-10-31' });
+});
+
 it('asistencia (US-12): pide la asistencia del deportista en el rango y devuelve solo fecha, rutina y cumplimiento', async () => {
   http.get.mockResolvedValue([
     { fecha: '2026-10-21', rutina: 'Piernas', cumplimiento: 100 },
