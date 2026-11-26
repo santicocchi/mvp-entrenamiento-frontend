@@ -17,11 +17,11 @@ function aSesionDeHoy(api) {
   };
 }
 
-/** @typedef {{ numero: number, peso: number, repeticiones: number, rir: number }} SerieHistorial */
+/** @typedef {{ numero: number, peso: number, repeticiones: number, rir: number, recordPersonal: boolean }} SerieHistorial */
 /** @typedef {{ nombre: string, cumplimiento: number, series: SerieHistorial[] }} EjercicioHistorial */
 /** @typedef {{ fecha: string, rutina: string, cumplimiento: number, ejercicios: EjercicioHistorial[] }} SesionHistorial */
 
-// US-20: del contrato a lo que usa la pantalla (los campos ya coinciden; se copian para no depender del back)
+// US-20: del back (snake_case) a lo que usa la pantalla (camelCase)
 /** @returns {SesionHistorial} */
 function aSesionHistorial(api) {
   return {
@@ -31,7 +31,14 @@ function aSesionHistorial(api) {
     ejercicios: api.ejercicios.map((ejercicio) => ({
       nombre: ejercicio.nombre,
       cumplimiento: ejercicio.cumplimiento,
-      series: ejercicio.series.map(({ numero, peso, repeticiones, rir }) => ({ numero, peso, repeticiones, rir })),
+      series: ejercicio.series.map((serie) => ({
+        numero: serie.numero,
+        peso: serie.peso,
+        repeticiones: serie.repeticiones,
+        rir: serie.rir,
+        // El back decide si la serie fue récord personal (RN9)
+        recordPersonal: serie.record_personal === true,
+      })),
     })),
   };
 }

@@ -75,10 +75,23 @@ export default function DeportistaDetalle() {
   );
 }
 
-export function Cumplimiento({ valor }) {
+// Solo visual: color de la barra según el porcentaje
+function nivelCumplimiento(valor) {
+  if (valor >= 100) return 'completo';
+  if (valor >= 50) return 'medio';
+  return 'bajo';
+}
+
+// grande: barra más grande y con color por nivel (vista de sesiones del deportista)
+export function Cumplimiento({ valor, grande = false }) {
   return (
     <span className="cumplimiento">
-      <span className="cumplimiento-barra"><span style={{ width: `${valor}%` }} /></span>
+      <span
+        className={grande ? 'cumplimiento-barra cumplimiento-barra-grande' : 'cumplimiento-barra'}
+        data-nivel={grande ? nivelCumplimiento(valor) : undefined}
+      >
+        <span style={{ width: `${valor}%` }} />
+      </span>
       {valor}%
     </span>
   );

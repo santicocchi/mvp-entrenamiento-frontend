@@ -43,7 +43,10 @@ it('US-20: traduce las sesiones del historial y manda el rango de fechas', async
         {
           nombre: 'Sentadilla',
           cumplimiento: 67,
-          series: [{ numero: 1, peso: 60, repeticiones: 8, rir: 2 }],
+          series: [
+            { numero: 1, peso: 60, repeticiones: 8, rir: 2, record_personal: false },
+            { numero: 2, peso: 65, repeticiones: 8, rir: 1, record_personal: true },
+          ],
         },
       ],
     },
@@ -57,7 +60,10 @@ it('US-20: traduce las sesiones del historial y manda el rango de fechas', async
         {
           nombre: 'Sentadilla',
           cumplimiento: 67,
-          series: [{ numero: 1, peso: 60, repeticiones: 8, rir: 2 }],
+          series: [
+            { numero: 1, peso: 60, repeticiones: 8, rir: 2, recordPersonal: false },
+            { numero: 2, peso: 65, repeticiones: 8, rir: 1, recordPersonal: true },
+          ],
         },
       ],
     },

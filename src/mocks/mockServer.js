@@ -80,6 +80,12 @@ function seriesDelDeportista(deportistaId, ejercicioId) {
 // DetectorRecordPersonal (RN9): mayor peso; a igual peso, más repeticiones
 const esMejor = (a, b) => a.peso > b.peso || (a.peso === b.peso && a.repeticiones > b.repeticiones);
 
+// US-20: la serie fue récord si, al registrarla, superó a todas las anteriores del ejercicio
+function fueRecordPersonal(deportistaId, serie) {
+  const anteriores = seriesDelDeportista(deportistaId, serie.ejercicio_id).filter((s) => s.id < serie.id);
+  return anteriores.length > 0 && anteriores.every((anterior) => esMejor(serie, anterior));
+}
+
 function recordActual(deportistaId, ejercicioId, excluirSerieId) {
   return seriesDelDeportista(deportistaId, ejercicioId)
     .filter((s) => s.id !== excluirSerieId)
@@ -351,7 +357,13 @@ ruta('GET', '/sesiones', { roles: DEPORTISTA }, ({ usuario, query }) => {
           return {
             nombre: nombreEjercicio(d.ejercicio_id),
             cumplimiento: cumplimientoEjercicio(series.length, d.series_objetivo),
-            series: series.map(({ numero, peso, repeticiones, rir }) => ({ numero, peso, repeticiones, rir })),
+            series: series.map((x) => ({
+              numero: x.numero,
+              peso: x.peso,
+              repeticiones: x.repeticiones,
+              rir: x.rir,
+              record_personal: fueRecordPersonal(usuario.id, x),
+            })),
           };
         }),
       };
