@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { deportistasService } from '../../services/deportistas.service';
 import { medicionesService } from '../../services/mediciones.service';
+import { sesionesService } from '../../services/sesiones.service';
 import { useCarga } from '../../hooks/useCarga';
 import { Cargando, MensajeError, Vacio } from '../../components/Estado';
 import GraficoEvolucion from '../../components/GraficoEvolucion';
+import Cumplimiento from '../../components/Cumplimiento';
 import { formatearFecha, hoy, sumarDias } from '../../utils/fechas';
 
 // US-12: asistencia (fecha, rutina, cumplimiento; sin series, RN17) + evolución del peso corporal
@@ -15,7 +17,8 @@ export default function DeportistaDetalle() {
   const { datos: deportistas } = useCarga(() => deportistasService.listar());
   const deportista = deportistas?.find((d) => d.id === Number(id));
 
-  const asistencia = useCarga(() => deportistasService.asistencia(id, rango.desde, rango.hasta), [id, rango]);
+  // Por defecto, los últimos 30 días. El back valida el rango (desde ≤ hasta) y el vínculo (403).
+  const asistencia = useCarga(() => sesionesService.asistencia(id, rango.desde, rango.hasta), [id, rango]);
   const mediciones = useCarga(() => medicionesService.listar({ deportistaId: id }), [id]);
 
   return (
@@ -34,11 +37,11 @@ export default function DeportistaDetalle() {
       <div className="fila-formulario">
         <label className="campo">
           Desde
-          <input type="date" value={rango.desde} onChange={(e) => setRango({ ...rango, desde: e.target.value })} />
+          <input type="date" value={rango.desde} max={rango.hasta} onChange={(e) => setRango({ ...rango, desde: e.target.value })} />
         </label>
         <label className="campo">
           Hasta
-          <input type="date" value={rango.hasta} onChange={(e) => setRango({ ...rango, hasta: e.target.value })} />
+          <input type="date" value={rango.hasta} min={rango.desde} onChange={(e) => setRango({ ...rango, hasta: e.target.value })} />
         </label>
       </div>
       {asistencia.cargando && <Cargando />}
@@ -72,27 +75,5 @@ export default function DeportistaDetalle() {
         />
       )}
     </section>
-  );
-}
-
-// Solo visual: color de la barra según el porcentaje
-function nivelCumplimiento(valor) {
-  if (valor >= 100) return 'completo';
-  if (valor >= 50) return 'medio';
-  return 'bajo';
-}
-
-// grande: barra más grande y con color por nivel (vista de sesiones del deportista)
-export function Cumplimiento({ valor, grande = false }) {
-  return (
-    <span className="cumplimiento">
-      <span
-        className={grande ? 'cumplimiento-barra cumplimiento-barra-grande' : 'cumplimiento-barra'}
-        data-nivel={grande ? nivelCumplimiento(valor) : undefined}
-      >
-        <span style={{ width: `${valor}%` }} />
-      </span>
-      {valor}%
-    </span>
   );
 }

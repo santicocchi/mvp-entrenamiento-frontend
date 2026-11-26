@@ -1,4 +1,4 @@
-import { Cumplimiento } from '../../pages/entrenador/DeportistaDetalle';
+import Cumplimiento from '../Cumplimiento';
 import { formatearFechaLarga, haceCuanto, partesFecha } from '../../utils/fechas';
 import { resumirSesion, textoRecords, textoSeries } from './resumenSesion';
 

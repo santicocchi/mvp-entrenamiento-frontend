@@ -1,21 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { progresoService } from '../../services/progreso.service';
 import { useCarga } from '../../hooks/useCarga';
 import { Cargando, MensajeError, Vacio } from '../../components/Estado';
 import { formatearFecha } from '../../utils/fechas';
 import GraficoEvolucion from '../../components/GraficoEvolucion';
 
-// US-19
+// US-19: ver el progreso de cada ejercicio.
+// El récord, el 1RM, la mejor serie y el volumen los calcula el back (CalculadoraProgreso): acá solo se muestran.
 export default function Progreso() {
+  // Solo los ejercicios que el deportista registró alguna vez (CU23)
   const ejercicios = useCarga(() => progresoService.ejerciciosConProgreso());
-  const [ejercicioId, setEjercicioId] = useState('');
-
-  useEffect(() => {
-    if (!ejercicioId && ejercicios.datos?.length) setEjercicioId(String(ejercicios.datos[0].id));
-  }, [ejercicios.datos, ejercicioId]);
+  const [ejercicioElegido, setEjercicioElegido] = useState('');
 
   if (ejercicios.cargando) return <Cargando />;
   if (ejercicios.error) return <MensajeError>{ejercicios.error.message}</MensajeError>;
+
+  // Sin elección todavía, se muestra el primero de la lista
+  const ejercicioId = ejercicioElegido || String(ejercicios.datos[0]?.id ?? '');
 
   return (
     <section>
@@ -26,11 +27,11 @@ export default function Progreso() {
         <>
           <label className="campo campo-corto">
             Ejercicio
-            <select value={ejercicioId} onChange={(e) => setEjercicioId(e.target.value)}>
+            <select value={ejercicioId} onChange={(e) => setEjercicioElegido(e.target.value)}>
               {ejercicios.datos.map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}
             </select>
           </label>
-          {ejercicioId && <DetalleProgreso ejercicioId={ejercicioId} />}
+          <DetalleProgreso ejercicioId={ejercicioId} />
         </>
       )}
     </section>
@@ -41,43 +42,66 @@ function DetalleProgreso({ ejercicioId }) {
   const { datos, cargando, error } = useCarga(() => progresoService.obtener(ejercicioId), [ejercicioId]);
   if (cargando) return <Cargando />;
   if (error) return <MensajeError>{error.message}</MensajeError>;
+  if (datos.porFecha.length === 0) return <Vacio>Todavía no registraste series de este ejercicio.</Vacio>;
 
-  const ultimo = datos.por_fecha[datos.por_fecha.length - 1];
+  const ultimo = datos.porFecha[datos.porFecha.length - 1];
+  // La tabla va de la sesión más reciente a la más antigua; los gráficos, en orden cronológico
+  const porFechaReciente = [...datos.porFecha].reverse();
 
   return (
     <>
       <div className="resumen-progreso">
         {datos.record && (
-          <div className="dato">
+          <div className="dato" aria-label="Récord personal">
             <span className="texto-suave">Récord personal</span>
             <span className="numero-grande">{datos.record.peso} kg × {datos.record.repeticiones}</span>
             <span className="texto-suave">{formatearFecha(datos.record.fecha)}</span>
           </div>
         )}
-        {ultimo && (
-          <div className="dato">
-            <span className="texto-suave">1RM estimado (última sesión)</span>
-            <span className="numero-grande">{ultimo.rm_estimado} kg</span>
-            <span className="texto-suave">Fórmula de Epley</span>
-          </div>
-        )}
+        <div className="dato" aria-label="1RM estimado">
+          <span className="texto-suave">1RM estimado (última sesión)</span>
+          <span className="numero-grande">{ultimo.rmEstimado} kg</span>
+          <span className="texto-suave">Es una estimación, no un peso que hayas levantado</span>
+        </div>
       </div>
 
-      <h2>Peso máximo y 1RM estimado</h2>
+      <h2>Peso máximo por sesión</h2>
       <GraficoEvolucion
-        datos={datos.por_fecha}
-        series={[
-          { clave: 'peso_maximo', nombre: 'Peso máximo', color: '#12607a' },
-          { clave: 'rm_estimado', nombre: '1RM estimado', color: '#e0a21b' },
-        ]}
+        datos={datos.porFecha}
+        series={[{ clave: 'pesoMaximo', nombre: 'Peso máximo', color: '#12607a' }]}
       />
 
-      <h2>Volumen por sesión</h2>
+      <h2>1RM estimado por sesión</h2>
+      <p className="texto-suave">
+        El 1RM estimado es el peso que podrías levantar una sola vez, calculado con la fórmula de Epley:
+        peso × (1 + repeticiones / 30). Es una estimación, no tu récord.
+      </p>
       <GraficoEvolucion
-        datos={datos.por_fecha}
-        series={[{ clave: 'volumen', nombre: 'Volumen', color: '#18232f' }]}
-        alto={220}
+        datos={datos.porFecha}
+        series={[{ clave: 'rmEstimado', nombre: '1RM estimado', color: '#e0a21b' }]}
       />
+
+      <h2>Detalle por sesión</h2>
+      <div className="tabla-contenedor">
+        <table className="tabla">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Mejor serie</th>
+              <th>Volumen</th>
+            </tr>
+          </thead>
+          <tbody>
+            {porFechaReciente.map((delDia) => (
+              <tr key={delDia.fecha}>
+                <td>{formatearFecha(delDia.fecha)}</td>
+                <td>{delDia.mejorSerie.peso} kg × {delDia.mejorSerie.repeticiones}</td>
+                <td>{delDia.volumen} kg</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Cumplimiento } from '../../pages/entrenador/DeportistaDetalle';
+import Cumplimiento from '../Cumplimiento';
 import { formatearFecha, formatearFechaLarga, haceCuanto } from '../../utils/fechas';
 import { enumerar, formatearPeso, mensajeCumplimiento, resumirSesion, textoRecords } from './resumenSesion';
 

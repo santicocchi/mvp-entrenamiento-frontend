@@ -160,6 +160,7 @@ ruta('GET', '/deportistas/:id/asistencia', { roles: ENTRENADOR }, ({ usuario, pa
   deportistaVinculado(usuario.id, deportistaId);
   const desde = query.get('desde');
   const hasta = query.get('hasta');
+  if (desde && hasta && desde > hasta) error(422, 'La fecha desde no puede ser posterior a la fecha hasta.');
   // RN17: sin pesos ni repeticiones
   const lista = db.sesiones
     .filter((s) => s.deportista_id === deportistaId && (!desde || s.fecha >= desde) && (!hasta || s.fecha <= hasta))
@@ -391,7 +392,7 @@ ruta('GET', '/progreso', { roles: DEPORTISTA }, ({ usuario, query }) => {
       fecha,
       peso_maximo: mejor.peso,
       rm_estimado: Math.round(rm * 10) / 10,
-      mejor_serie: `${mejor.peso} × ${mejor.repeticiones}`,
+      mejor_serie: { peso: mejor.peso, repeticiones: mejor.repeticiones },
       volumen: delDia.reduce((total, s) => total + s.peso * s.repeticiones, 0),
     };
   });
