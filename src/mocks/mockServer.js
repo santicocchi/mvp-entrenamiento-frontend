@@ -379,7 +379,7 @@ ruta('GET', '/progreso', { roles: DEPORTISTA }, ({ usuario, query }) => {
       fecha,
       peso_maximo: mejor.peso,
       rm_estimado: Math.round(rm * 10) / 10,
-      mejor_serie: `${mejor.peso} × ${mejor.repeticiones}`,
+      mejor_serie: { peso: mejor.peso, repeticiones: mejor.repeticiones },
       volumen: delDia.reduce((total, s) => total + s.peso * s.repeticiones, 0),
     };
   });
