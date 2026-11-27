@@ -61,7 +61,7 @@ El criterio para separar services **no es la cantidad de funciones**, sino quié
 | `plan-vigente.service.js` | `obtener` | `/plan-vigente` | US-13 |
 | `series.service.js` | `registrar`, `corregir` | `/series` | US-15, 17, 18 |
 | `sesiones.service.js` | `deHoy`, `listar`, **`asistencia`** | `/sesiones/hoy`, `/sesiones`, `/deportistas/{id}/asistencia` | US-16, 20, 12 |
-| `progreso.service.js` | `obtener`, `ejerciciosConProgreso`, **`deDeportista`** | `/progreso…`, `/deportistas/{id}/progreso/{ejercicio_id}` | US-19, 06 |
+| `progreso.service.js` | `obtener`, `ejerciciosConProgreso`, `resumen`, **`deDeportista`** | `/progreso…`, `/progreso/resumen`, `/deportistas/{id}/progreso/{ejercicio_id}` | US-19, 06 |
 | `mediciones.service.js` | `registrar`, `listar` | `/mediciones` | US-21 |
 
 > **A mover:** hoy `asistencia` y `progresoEnEjercicio` están en `deportistas.service.js` porque la URL empieza con `/deportistas`. Pero cambian cuando cambia el **registro** de entrenamiento, no la gestión de deportistas, así que van en `sesiones.service.js` y `progreso.service.js`. Los mueve el dueño de US-12 y de US-19.
