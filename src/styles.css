@@ -158,11 +158,24 @@ a { color: var(--primario); }
 .resumen-progreso { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
 .dato { background: var(--superficie); border-radius: var(--radio); padding: 0.9rem 1.1rem; display: grid; gap: 0.25rem; min-width: 220px; }
 
+/* Progreso: resumen de la semana */
+.resumen-semana { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--tinta); color: #fff; border-radius: var(--radio); margin-bottom: 1.5rem; }
+.resumen-semana-dato { display: grid; gap: 0.3rem; align-content: start; padding: 1.1rem 1.4rem; }
+.resumen-semana-dato + .resumen-semana-dato { border-left: 1px solid rgb(255 255 255 / 14%); }
+.resumen-semana-titulo { font-size: 0.9rem; font-weight: 600; color: rgb(255 255 255 / 75%); }
+.resumen-semana-numero { font-family: var(--titulos); font-size: 2.8rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.resumen-semana-numero small { font-size: 1.1rem; font-weight: 600; color: rgb(255 255 255 / 75%); }
+.resumen-semana-record { color: var(--record); display: flex; align-items: center; gap: 0.4rem; }
+.resumen-semana-estrella { font-family: var(--texto); font-size: 1.9rem; line-height: 1; }
+.resumen-semana-detalle { font-size: 0.9rem; color: rgb(255 255 255 / 60%); }
+
 @media (max-width: 640px) {
   h1 { font-size: 1.9rem; }
   .barra-interior { gap: 0.5rem; }
   .menu { order: 3; width: 100%; }
   .campos-serie input { width: 4.5rem; }
+  .resumen-semana { grid-template-columns: 1fr; }
+  .resumen-semana-dato + .resumen-semana-dato { border-left: none; border-top: 1px solid rgb(255 255 255 / 14%); }
 }
 
 @media (prefers-reduced-motion: reduce) {

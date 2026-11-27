@@ -4,34 +4,44 @@ import { useCarga } from '../../hooks/useCarga';
 import { Cargando, MensajeError, Vacio } from '../../components/Estado';
 import { formatearFecha } from '../../utils/fechas';
 import GraficoEvolucion from '../../components/GraficoEvolucion';
+import ResumenProgreso from '../../components/progreso/ResumenProgreso';
 
-// US-19: ver el progreso de cada ejercicio.
+// US-19: ver el progreso de cada ejercicio, con un resumen de todos los ejercicios arriba.
 // El récord, el 1RM, la mejor serie y el volumen los calcula el back (CalculadoraProgreso): acá solo se muestran.
 export default function Progreso() {
+  const resumen = useCarga(() => progresoService.resumen());
   // Solo los ejercicios que el deportista registró alguna vez (CU23)
   const ejercicios = useCarga(() => progresoService.ejerciciosConProgreso());
-  const [ejercicioElegido, setEjercicioElegido] = useState('');
-
-  if (ejercicios.cargando) return <Cargando />;
-  if (ejercicios.error) return <MensajeError>{ejercicios.error.message}</MensajeError>;
-
-  // Sin elección todavía, se muestra el primero de la lista
-  const ejercicioId = ejercicioElegido || String(ejercicios.datos[0]?.id ?? '');
+  const [ejercicioId, setEjercicioId] = useState('');
 
   return (
     <section>
       <h1>Progreso</h1>
-      {ejercicios.datos.length === 0 ? (
+
+      {resumen.cargando && <Cargando />}
+      {resumen.error && <MensajeError>{resumen.error.message}</MensajeError>}
+      {resumen.datos && <ResumenProgreso resumen={resumen.datos} />}
+
+      <h2>Por ejercicio</h2>
+      {ejercicios.cargando && <Cargando />}
+      {ejercicios.error && <MensajeError>{ejercicios.error.message}</MensajeError>}
+      {ejercicios.datos && ejercicios.datos.length === 0 && (
         <Vacio>Registrá tu primera serie para empezar a ver tu progreso.</Vacio>
-      ) : (
+      )}
+      {ejercicios.datos?.length > 0 && (
         <>
           <label className="campo campo-corto">
             Ejercicio
-            <select value={ejercicioId} onChange={(e) => setEjercicioElegido(e.target.value)}>
+            <select value={ejercicioId} onChange={(e) => setEjercicioId(e.target.value)}>
+              <option value="">Elegí un ejercicio</option>
               {ejercicios.datos.map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}
             </select>
           </label>
-          <DetalleProgreso ejercicioId={ejercicioId} />
+          {ejercicioId ? (
+            <DetalleProgreso ejercicioId={ejercicioId} />
+          ) : (
+            <p className="texto-suave">Elegí un ejercicio para ver tu récord, el 1RM estimado y cómo fue cambiando en cada sesión.</p>
+          )}
         </>
       )}
     </section>

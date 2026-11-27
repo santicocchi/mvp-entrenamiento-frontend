@@ -24,6 +24,21 @@ function aProgreso(api) {
   };
 }
 
+/** @typedef {{ desde: string, hasta: string, records: number, volumen: number, volumenAnterior: number, sesiones: number, series: number }} ResumenDeLaSemana */
+
+/** @returns {ResumenDeLaSemana} */
+function aResumen(api) {
+  return {
+    desde: api.desde,
+    hasta: api.hasta,
+    records: api.records,
+    volumen: api.volumen,
+    volumenAnterior: api.volumen_anterior,
+    sesiones: api.sesiones,
+    series: api.series,
+  };
+}
+
 /** @returns {PesoMaximoDeLaFecha} */
 function aPesoMaximoDeLaFecha(api) {
   return { fecha: api.fecha, pesoMaximo: api.peso_maximo, repeticiones: api.repeticiones };
@@ -37,6 +52,13 @@ export const progresoService = {
    * @returns {Promise<Progreso>}
    */
   obtener: async (ejercicioId) => aProgreso(await http.get('/progreso', { ejercicio_id: ejercicioId })),
+
+  /**
+   * Resumen · GET /api/progreso/resumen → de esta semana (lunes a domingo): récords personales,
+   * volumen (y el de la semana anterior), sesiones y series.
+   * @returns {Promise<ResumenDeLaSemana>}
+   */
+  resumen: async () => aResumen(await http.get('/progreso/resumen')),
 
   /**
    * US-19 / CU23 · GET /api/progreso/ejercicios → los ejercicios que el deportista registró alguna vez
