@@ -28,6 +28,16 @@ describe('progresoService', () => {
     expect(await progresoService.obtener(9)).toEqual({ record: null, porFecha: [] });
   });
 
+  it('resumen: pide el resumen y lo traduce a camelCase', async () => {
+    http.get.mockResolvedValue({
+      desde: '2026-10-19', hasta: '2026-10-25', records: 1, volumen: 1020, volumen_anterior: 1440, sesiones: 2, series: 4,
+    });
+    expect(await progresoService.resumen()).toEqual({
+      desde: '2026-10-19', hasta: '2026-10-25', records: 1, volumen: 1020, volumenAnterior: 1440, sesiones: 2, series: 4,
+    });
+    expect(http.get).toHaveBeenCalledWith('/progreso/resumen');
+  });
+
   it('ejerciciosConProgreso: lista los ejercicios registrados alguna vez', async () => {
     http.get.mockResolvedValue([{ id: 1, nombre: 'Sentadilla con barra' }]);
     expect(await progresoService.ejerciciosConProgreso()).toEqual([{ id: 1, nombre: 'Sentadilla con barra' }]);
