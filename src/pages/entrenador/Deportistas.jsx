@@ -57,7 +57,7 @@ export default function Deportistas() {
                   <td>{d.planVigente?.nombre ?? <span className="texto-suave">Sin plan</span>}</td>
                   <td>
                     {d.planVigente
-                      ? `${formatearFecha(d.planVigente.desde)} al ${formatearFecha(d.planVigente.hasta)}`
+                      ? `${formatearFecha(d.planVigente.vigenciaDesde)} al ${formatearFecha(d.planVigente.vigenciaHasta)}`
                       : '—'}
                   </td>
                   <td><Link to={`/entrenador/deportistas/${d.id}`}>Ver asistencia</Link></td>
